@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Client Status Dashboard — Lyons Gaddis</title>
+<style>
+:root { color-scheme: light; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, sans-serif; background: #f1f5f9; color: #0f172a; min-height: 100vh; font-size: 13px; }
+
+.header { background: #1e3a5f; color: white; padding: 18px 24px 14px; display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+.header-text h1 { font-size: 18px; font-weight: 700; letter-spacing: -0.2px; }
+.header-text .sub { font-size: 11px; color: #93b4d4; margin-top: 3px; }
+.submit-btn { background: #2563eb; color: white; border: none; border-radius: 8px; padding: 9px 16px; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: background 0.15s; display: flex; align-items: center; gap: 6px; text-decoration: none; }
+.submit-btn:hover { background: #1d4ed8; }
+
+.readonly-banner { background: #1e40af; color: #bfdbfe; font-size: 11px; padding: 7px 24px; border-bottom: 1px solid #1d4ed8; display: flex; align-items: center; gap: 8px; }
+.readonly-banner strong { color: white; }
+.readonly-banner a { color: #93c5fd; text-decoration: none; }
+.readonly-banner a:hover { text-decoration: underline; }
+
+.stats-bar { background: white; border-bottom: 1px solid #e2e8f0; padding: 10px 24px; display: flex; gap: 28px; align-items: center; flex-wrap: wrap; }
+.stat { display: flex; flex-direction: column; }
+.stat-val { font-size: 20px; font-weight: 700; line-height: 1; }
+.stat-lbl { font-size: 10px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+.stat-warn { color: #b45309; }
+.stat-danger { color: #dc2626; }
+.stat-unassigned { color: #9333ea; }
+
+.controls { background: white; border-bottom: 1px solid #e2e8f0; padding: 10px 24px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.search { padding: 6px 11px; border: 1px solid #d1d5db; border-radius: 7px; font-size: 12px; width: 200px; outline: none; color: #1e293b; }
+.search:focus { border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,0.15); }
+.filters { display: flex; gap: 3px; flex-wrap: wrap; }
+.fbtn { padding: 5px 11px; border-radius: 6px; font-size: 11px; font-weight: 600; border: 1px solid #d1d5db; background: white; color: #4b5563; cursor: pointer; transition: all 0.12s; }
+.fbtn:hover { border-color: #6b7280; }
+.fbtn.on { background: #1e3a5f; color: white; border-color: #1e3a5f; }
+.fbtn.unassigned-btn.on { background: #9333ea; border-color: #9333ea; }
+.xpbtn { margin-left: auto; padding: 5px 11px; border-radius: 6px; font-size: 11px; border: 1px solid #d1d5db; background: white; color: #4b5563; cursor: pointer; white-space: nowrap; }
+.xpbtn:hover { border-color: #6b7280; }
+
+.legend { background: white; border-bottom: 1px solid #e2e8f0; padding: 6px 24px; display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+.leg-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #64748b; }
+.leg-dot { width: 8px; height: 8px; border-radius: 50%; }
+.dot-ip { background: #3b82f6; }
+.dot-wc { background: #f59e0b; }
+.dot-wp { background: #8b5cf6; }
+.dot-ua { background: #dc2626; }
+
+/* Modal */
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
+.modal-overlay.open { display: flex; }
+.modal { background: white; border-radius: 14px; padding: 28px; width: 520px; max-width: calc(100vw - 32px); box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+.modal h2 { font-size: 16px; font-weight: 700; color: #1e3a5f; margin-bottom: 6px; }
+.modal .modal-sub { font-size: 12px; color: #64748b; margin-bottom: 20px; line-height: 1.5; }
+.modal label { display: block; font-size: 11px; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 5px; margin-top: 14px; }
+.modal label:first-of-type { margin-top: 0; }
+.modal input, .modal select, .modal textarea { width: 100%; padding: 8px 10px; border: 1px solid #d1d5db; border-radius: 7px; font-size: 13px; color: #0f172a; outline: none; font-family: inherit; }
+.modal input:focus, .modal select:focus, .modal textarea:focus { border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,0.15); }
+.modal textarea { resize: vertical; min-height: 80px; }
+.modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+.modal-cancel { padding: 8px 16px; border-radius: 7px; border: 1px solid #d1d5db; background: white; color: #4b5563; font-size: 13px; font-weight: 500; cursor: pointer; }
+.modal-cancel:hover { border-color: #6b7280; }
+.modal-send { padding: 8px 18px; border-radius: 7px; border: none; background: #1e3a5f; color: white; font-size: 13px; font-weight: 600; cursor: pointer; }
+.modal-send:hover { background: #1e4976; }
+.modal-note { margin-top: 14px; padding: 10px 12px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 7px; font-size: 11px; color: #166534; line-height: 1.5; }
+
+.projects { padding: 16px 24px; display: flex; flex-direction: column; gap: 7px; }
+.card { background: white; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
+.card.has-unassigned { border-left: 3px solid #dc2626; }
+.card-hdr { padding: 11px 16px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; transition: background 0.1s; }
+.card-hdr:hover { background: #f8fafc; }
+.hdr-left { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.cname { font-size: 13px; font-weight: 600; color: #1e3a5f; }
+.tc-badge { font-size: 10px; background: #f1f5f9; color: #64748b; padding: 2px 7px; border-radius: 9px; }
+.od-badge { font-size: 10px; background: #fef2f2; color: #dc2626; padding: 2px 7px; border-radius: 9px; font-weight: 600; }
+.ua-badge { font-size: 10px; background: #fdf4ff; color: #9333ea; padding: 2px 7px; border-radius: 9px; font-weight: 600; }
+.new-badge { font-size: 10px; background: #f0fdf4; color: #166534; padding: 2px 7px; border-radius: 9px; font-weight: 600; }
+.hdr-right { display: flex; align-items: center; gap: 10px; }
+.assignee-list { font-size: 11px; color: #94a3b8; }
+.chev { color: #cbd5e1; font-size: 10px; transition: transform 0.18s; }
+.chev.open { transform: rotate(180deg); }
+
+.task-body { display: none; border-top: 1px solid #f1f5f9; overflow-x: auto; }
+.task-body.open { display: block; }
+table { width: 100%; border-collapse: collapse; }
+thead tr { background: #f8fafc; }
+th { font-size: 10px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; padding: 7px 14px; text-align: left; white-space: nowrap; }
+td { padding: 9px 14px; border-top: 1px solid #f8fafc; vertical-align: top; }
+tr:hover td { background: #f8fafc; }
+.td-task { color: #0f172a; font-weight: 500; max-width: 260px; line-height: 1.4; }
+.td-who { white-space: nowrap; font-weight: 500; }
+.td-who.normal { color: #374151; }
+.td-who.unassigned { color: #dc2626; font-weight: 700; }
+.td-dl { font-size: 11px; font-weight: 600; white-space: nowrap; }
+.dl-od { color: #dc2626; }
+.dl-soon { color: #d97706; }
+.dl-ok { color: #64748b; }
+.td-notes { font-size: 11px; color: #6b7280; max-width: 220px; line-height: 1.4; }
+.badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 9px; font-size: 10px; font-weight: 600; border: 1px solid; white-space: nowrap; }
+.b-ip { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
+.b-wc { background: #fffbeb; color: #92400e; border-color: #fde68a; }
+.b-wp { background: #f5f3ff; color: #5b21b6; border-color: #ddd6fe; }
+.empty { padding: 48px; text-align: center; color: #94a3b8; font-size: 13px; }
+.footer { padding: 16px 24px; text-align: center; font-size: 11px; color: #94a3b8; border-top: 1px solid #e2e8f0; margin-top: 8px; background: white; }
+
+/* This Week / Urgent Panel */
+.urgent-panel { margin: 12px 24px 0; background: #fff7ed; border: 1.5px solid #fed7aa; border-radius: 12px; overflow: hidden; }
+.urgent-panel-hdr { padding: 11px 18px; display: flex; align-items: center; gap: 9px; border-bottom: 1px solid #fed7aa; }
+.urgent-panel-hdr h2 { font-size: 13px; font-weight: 700; color: #9a3412; }
+.up-sub { font-size: 11px; color: #c2410c; }
+.urgent-count { background: #ea580c; color: white; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 9px; margin-left: auto; }
+.urgent-table { width: 100%; border-collapse: collapse; }
+.urgent-table th { font-size: 10px; font-weight: 600; color: #c2410c; text-transform: uppercase; letter-spacing: 0.5px; padding: 7px 14px; text-align: left; background: #fff7ed; white-space: nowrap; }
+.urgent-table td { padding: 9px 14px; border-top: 1px solid #fed7aa; vertical-align: top; }
+.urgent-table tr:hover td { background: #ffedd5; }
+.urgent-client { font-size: 11px; font-weight: 700; color: #9a3412; white-space: nowrap; }
+.urgent-task { font-size: 12px; font-weight: 500; color: #0f172a; }
+.urg-why { font-size: 10px; padding: 2px 7px; border-radius: 5px; font-weight: 600; white-space: nowrap; }
+.urg-why-od { background: #fef2f2; color: #dc2626; border: 1px solid #fca5a5; }
+.urg-why-soon { background: #fff7ed; color: #c2410c; border: 1px solid #fed7aa; }
+.urg-why-flag { background: #fdf4ff; color: #7e22ce; border: 1px solid #e9d5ff; }
+.stat-urgent { color: #ea580c; }
+.urg-badge { font-size: 10px; background: #fff7ed; color: #c2410c; padding: 2px 7px; border-radius: 9px; font-weight: 600; border: 1px solid #fed7aa; }
+.card.has-urgent:not(.has-unassigned) { border-left: 3px solid #ea580c; }
+.urg-inline { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #ea580c; margin-right: 5px; vertical-align: middle; flex-shrink: 0; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-text">
+    <h1>Client Status Dashboard &mdash; Real Estate Practice Group</h1>
+    <div class="sub" id="sub"></div>
+  </div>
+  <button class="submit-btn" onclick="openModal()">&#9998; Submit an Update</button>
+</div>
+
+<div class="readonly-banner">
+  &#128274; <strong>Read-only view.</strong> Use the &ldquo;Submit an Update&rdquo; button to report a status change. Questions? Contact <a href="mailto:cgrant@lyonsgaddis.com">Cameron Grant</a>.
+</div>
+
+<div class="stats-bar" id="statsBar"></div>
+
+<div class="controls">
+  <input type="text" class="search" id="srch" placeholder="Search clients or tasks...">
+  <div class="filters" id="filters"></div>
+  <button class="xpbtn" id="xpbtn" onclick="toggleAll()">Expand All</button>
+</div>
+
+<div class="legend">
+  <span class="leg-item"><span class="leg-dot dot-ip"></span>In Progress</span>
+  <span class="leg-item"><span class="leg-dot dot-wc"></span>Waiting: Client</span>
+  <span class="leg-item"><span class="leg-dot dot-wp"></span>Waiting: Counterparty</span>
+  <span class="leg-item"><span class="leg-dot dot-ua"></span>Unassigned (needs owner)</span>
+  <span class="leg-item"><span class="leg-dot" style="background:#ea580c"></span>This Week / Priority</span>
+</div>
+
+<div id="urgentPanel"></div>
+<div class="projects" id="proj"></div>
+
+<div class="footer">
+  Lyons Gaddis, P.C. &bull; Real Estate Practice Group &bull; Managed by Cameron A. Grant &bull; Updates processed automatically each weekday morning
+</div>
+
+<!-- Submit Update Modal -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModalIfBg(event)">
+  <div class="modal">
+    <h2>Submit a Dashboard Update</h2>
+    <p class="modal-sub">Your update will be emailed to Cameron and applied to the dashboard automatically during the next morning sync. Use exact client names where possible.</p>
+
+    <label for="m-client">Client / Matter</label>
+    <input type="text" id="m-client" placeholder="e.g. Brookfield (BRP), Bestall Jack, Erie Four Corners">
+
+    <label for="m-task">Task (optional — leave blank if adding a new task)</label>
+    <input type="text" id="m-task" placeholder="e.g. LTWD Permit Issues Filing 7A">
+
+    <label for="m-type">Update Type</label>
+    <select id="m-type">
+      <option value="Status Change">Status Change</option>
+      <option value="Task Complete">Task Complete / Closed</option>
+      <option value="New Deadline">New Deadline</option>
+      <option value="New Task">New Task</option>
+      <option value="Notes Update">Notes Update</option>
+    </select>
+
+    <label for="m-details">Details</label>
+    <textarea id="m-details" placeholder="Describe the update. Include any deadline dates, new task descriptions, or status notes."></textarea>
+
+    <div class="modal-note">
+      &#9989; Your update will be sent to cgrant@lyonsgaddis.com and automatically applied during the next morning sync (weekdays, 8 AM). No follow-up needed.
+    </div>
+
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeModal()">Cancel</button>
+      <button class="modal-send" onclick="sendUpdate()">Send Update</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const LAST_UPDATED = "April 21, 2026";
+const ATTORNEYS = ["All","Cameron","James","Kennedy","Robyn","Unassigned"];
+const S = {
+  in_progress:          { label:"In Progress",     cls:"b-ip" },
+  waiting_client:       { label:"Waiting: Client", cls:"b-wc" },
+  waiting_counterparty: { label:"Waiting: Party",  cls:"b-wp" }
+};
+
+const DATA = [
+  { client:"Admin / Firm", tasks:[
+    { task:"Create contact list for all clients", assignee:"Unassigned", status:"in_progress", deadline:null, notes:"Previously assigned to Laura (resigned). Needs new owner." }
+  ]},
+  { client:"Arete Vistas", tasks:[
+    { task:"Cost Sharing Agreement", assignee:"Cameron", status:"waiting_counterparty", deadline:null, notes:"Emailed Josh on 4/3 for update." }
+  ]},
+  { client:"Barefoot", isNew:true, tasks:[
+    { task:"LTWD Filing 7E matter", assignee:"Cameron", status:"in_progress", deadline:null, notes:"LTWD documents reviewed. Meeting prep completed." }
+  ]},
+  { client:"Bestall, Jack", tasks:[
+    { task:"Monitor LLC matter", assignee:"Cameron", status:"in_progress", deadline:null, notes:"Keith estimates $1,500 to file. Jack says go ahead." },
+    { task:"LLC financial information litigation", assignee:"Cameron", status:"in_progress", deadline:null, notes:"Statutory demand ignored by Russ. Complaint filed and copy sent to LLC counsel. Keith Edwards (litigation group) managing ongoing matter." },
+    { task:"Motion to Stay Discovery (federal, E.D. Pa.)", assignee:"Cameron", status:"in_progress", deadline:null, notes:"Draft motion prepared. Six items to verify before filing." }
+  ]},
+  { client:"Boulder Rifle Club", tasks:[
+    { task:"Draft memo re: historical land use", assignee:"Kennedy", status:"in_progress", deadline:null, notes:"KDS to finalize memo and send to CAG for final review." }
+  ]},
+  { client:"Brookfield (BRP)", tasks:[
+    { task:"Shell Right-of-Way Ditch Issue", assignee:"Cameron", status:"in_progress", deadline:null, notes:"" },
+    { task:"LTWD Permit Issues Filing 7A", assignee:"Cameron", status:"in_progress", deadline:null, notes:"" },
+    { task:"Review O&G relinquishments", assignee:"Robyn", status:"in_progress", deadline:null, notes:"Cameron to review. Done, sent overview to CAG for review." },
+    { task:"Sarah Wagner Easement Acquisition", assignee:"Cameron", status:"in_progress", deadline:null, notes:"" },
+    { task:"Draft correspondence to Little Thompson Water District re fee calculation issues", assignee:"Cameron", status:"in_progress", deadline:null, notes:"On hold." }
+  ]},
+  { client:"Carter, Larry", tasks:[
+    { task:"Boulder County Easement", assignee:"James", status:"waiting_counterparty", deadline:null, notes:"w/f parties to complete settlement. Past due invoices noted." }
+  ]},
+  { client:"Christie, Megan & Richard", tasks:[
+    { task:"Iron Horse HOA Garage Door Dispute", assignee:"James", status:"in_progress", deadline:null, notes:"w/f signatures on Settlement. Pending O&E search for liens." }
+  ]},
+  { client:"Clover Creek Investments", tasks:[
+    { task:"Review and Revise Annexation Agreement", assignee:"Robyn", status:"in_progress", deadline:null, notes:"Comments sent to CAG 3/9 for review." },
+    { task:"Wait for city response to proposal sent April 6th", assignee:"Cameron", status:"waiting_counterparty", deadline:null, notes:"Follow-up sent to Molly on April 20th." }
+  ]},
+  { client:"Diamond G", tasks:[
+    { task:"Holcim Fill Agreement", assignee:"Cameron", status:"waiting_counterparty", deadline:null, notes:"Draft sent to Holcim on 4/2." },
+    { task:"Valvoline Transaction", assignee:"Cameron", status:"waiting_client", deadline:null, notes:"Draft sent to client on 4/2." }
+  ]},
+  { client:"Doug & JoAnna Grant", tasks:[
+    { task:"Record Affidavit re: Reimbursement", assignee:"Unassigned", status:"in_progress", deadline:null, notes:"Previously assigned to Laura (resigned). Notice to Lupton Land sent 12/24/25." },
+    { task:"2130 Mountain View (inspection resolution deadline)", assignee:"Robyn", status:"in_progress", deadline:"2026-04-24", urgent:true, notes:"Proposed resolution sent to buyer's broker 4/21. Resolution deadline remains 4/24." },
+    { task:"Debt Restructure Plan", assignee:"Cameron", status:"in_progress", deadline:null, notes:"" },
+    { task:"2130 Mountain View Sale", assignee:"Cameron", status:"in_progress", deadline:null, notes:"No title objections. Next deadline TBD." },
+    { task:"Terry Street RR Crossing Issue", assignee:"Cameron", status:"in_progress", deadline:null, notes:"" }
+  ]},
+  { client:"Doug & Jody Robinson", tasks:[
+    { task:"LLC Formation and Contribution of Rental Property", assignee:"Robyn", status:"waiting_client", deadline:null, notes:"Waiting for client, never responded. Follow up or no?" }
+  ]},
+  { client:"Elliott Family Farm", isNew:true, tasks:[
+    { task:"LOI Review and Negotiation", assignee:"Cameron", status:"in_progress", deadline:null, notes:"LOI received 4/3. Water proposal v7 and LOI review memos on file." },
+    { task:"Connect with seller's broker regarding water values", assignee:"Cameron", status:"in_progress", deadline:null, notes:"" }
+  ]},
+  { client:"Erie Commons Commercial", tasks:[
+    { task:"Draft proposal for cost reimbursement to Town of Erie", assignee:"Cameron", status:"in_progress", deadline:null, notes:"" }
+  ]},
+  { client:"Erie Four Corners", tasks:[
+    { task:"Waldner Litigation (DJR / Pounds v. Waldner)", assignee:"Cameron", status:"in_progress", deadline:"2026-05-05", urgent:true, notes:"Mediation May 5th. DJR LLC Class B/C distribution analysis complete." }
+  ]},
+  { client:"Frye, Chris", tasks:[
+    { task:"Fox Hill Loan Matters", assignee:"James", status:"waiting_client", deadline:null, notes:"w/f client. Loan docs still pending." },
+    { task:"McNeil Res Access Agreements", assignee:"Robyn", status:"waiting_counterparty", deadline:null, notes:"Revised docs sent to P. Groom on 3/17." }
+  ]},
+  { client:"Fry, Jennifer", tasks:[
+    { task:"LLC Tax Evaluation", assignee:"Cameron", status:"waiting_counterparty", deadline:null, notes:"Sent to CPA after April 15th." },
+    { task:"Terminate relationship with client", assignee:"Cameron", status:"in_progress", deadline:null, notes:"" }
+  ]},
+  { client:"Golden (Nelson)", tasks:[
+    { task:"Fredstrom Minerals (AmRise Claim)", assignee:"Cameron", status:"in_progress", deadline:null, notes:"CG to follow up with Barb re lot line adjustment." },
+    { task:"Address County Title Objections (BoCo)", assignee:"Cameron", status:"in_progress", deadline:null, notes:"" },
+    { task:"Member Resolution (BoCo)", assignee:"Kennedy", status:"in_progress", deadline:null, notes:"Resolution drafted 11/9. CAG to review." },
+    { task:"Reach out to Amrize re fill agreement", assignee:"Cameron", status:"in_progress", deadline:null, notes:"" },
+    { task:"Evaluate lease re Amrize abandoning minerals N of Hwy 119", assignee:"Cameron", status:"in_progress", deadline:null, notes:"" },
+    { task:"Evaluate whether I can represent the Nelsons", assignee:"Cameron", status:"in_progress", deadline:null, notes:"" },
+    { task:"Revise equestrian access lease with neighbor", assignee:"Cameron", status:"in_progress", deadline:null, notes:"" },
+    { task:"Contact Boulder County re Fredstrom closing", assignee:"Cameron", status:"in_progress", deadline:null, notes:"" },
+    { task:"Contact Boulder County re lot line adjustment", assignee:"Cameron", status:"in_progress", deadline:null, notes:"" },
+    { task:"Reserve conference room for Golden and Nelson (first week of June)", assignee:"Cameron", status:"in_progress", deadline:"2026-06-01", notes:"" }
+  ]},
+  { client:"Grant Brothers", tasks:[
+    { task:"Mineral Conveyance and Dissolution", assignee:"Cameron", status:"waiting_client", deadline:null, notes:"w/f Doug approval of dissolution plan." },
+    { task:"Mineral Conveyance (finalize deeds)", assignee:"James", status:"in_progress", deadline:null, notes:"Finalize deeds. CG to check with Doug Grant." }
+  ]},
+  { client:"Grant, Aaron", tasks:[
+    { task:"6477 Frederick Way PSA - Calendar pending deadlines", assignee:"Cameron", status:"in_progress", deadline:null, notes:"PSA signed by Aaron. Review contract and calendar all contingency/deadline dates." },
+    { task:"800 S Franklin Demand Letter", assignee:"Cameron", status:"in_progress", deadline:null, notes:"Lit scheduling mediation (ECP/JSR)." },
+    { task:"Citywide Bank Litigation", assignee:"Cameron", status:"in_progress", deadline:null, notes:"Respond to Complaint." }
+  ]},
+  { client:"Kendrick", tasks:[
+    { task:"Assist with Aspen-area real estate purchase", assignee:"Robyn", status:"waiting_client", deadline:null, notes:"w/f client." }
+  ]},
+  { client:"Lofquist, Randy", tasks:[
+    { task:"Easement Evaluation at Sugar Mill Site", assignee:"James", status:"in_progress", deadline:null, notes:"" }
+  ]},
+  { client:"Longmont United Hospital Foundation", tasks:[
+    { task:"Oil and Gas Lease", assignee:"James", status:"waiting_counterparty", deadline:null, notes:"Working on addendum to Lease with operator. Waiting on response from operator." }
+  ]},
+  { client:"McCarthy, Tim", tasks:[
+    { task:"Operating Agreement Amendments", assignee:"James", status:"in_progress", deadline:null, notes:"" },
+    { task:"Potential Admission of New Partner", assignee:"James", status:"in_progress", deadline:null, notes:"Discussed with Tim. Sending draft this week." }
+  ]},
+  { client:"McGuire, Brendan", tasks:[
+    { task:"Commercial Property Purchase", assignee:"James", status:"in_progress", deadline:null, notes:"Redlined LOI terms sent 4/14." }
+  ]},
+  { client:"Moradi", tasks:[
+    { task:"Assemble cost estimates for building demolition", assignee:"Unassigned", status:"in_progress", deadline:null, notes:"Previously assigned to Laura (resigned). w/f estimates. CAG to get Pollard dealership demo contact." },
+    { task:"Obtain Mineral Appraisal/Valuation", assignee:"James", status:"in_progress", deadline:null, notes:"" },
+    { task:"White Rock ditch water share evaluation strategy", assignee:"Robyn", status:"in_progress", deadline:null, notes:"RLS draft email to CAG 4/9. Need approval to respond to client and approach Julie Pasillas." },
+    { task:"Lexington builder outreach strategy (Civitas)", assignee:"Cameron", status:"in_progress", deadline:null, notes:"Client email v4 prepared. Builder targets: Oakwood, LGI, Richmond American, Century Communities, Landmark." }
+  ]},
+  { client:"Nash, Patty", tasks:[
+    { task:"Assist with Lease Matter", assignee:"Robyn", status:"waiting_client", deadline:null, notes:"P. Nash responded 4/13 with new lease. Requested term sheet." }
+  ]},
+  { client:"Nelson Family", tasks:[
+    { task:"Form entity to hold Nelson/Redmond properties", assignee:"Robyn", status:"waiting_client", deadline:null, notes:"Update on approval from family?" }
+  ]},
+  { client:"Parkway West", isNew:true, tasks:[
+    { task:"Respond to purchase offer", assignee:"Cameron", status:"in_progress", deadline:null, notes:"" },
+    { task:"Discuss capital call with David", assignee:"Cameron", status:"in_progress", deadline:null, notes:"" }
+  ]},
+  { client:"Postle", tasks:[
+    { task:"Davis Development Termination", assignee:"James", status:"in_progress", deadline:null, notes:"Open records request to Thornton. Check if submitted." }
+  ]},
+  { client:"Pounds, Walt", tasks:[
+    { task:"Riverset LLC Demand", assignee:"Kennedy", status:"in_progress", deadline:null, notes:"Prior demand confirmed sufficient. Consider moving straight to complaint." }
+  ]},
+  { client:"Purvis", isNew:true, tasks:[
+    { task:"PPLLC Strategy - Mediation Path", assignee:"Cameron", status:"in_progress", deadline:null, notes:"Mediation is now recommended path. Keith Edwards as co-counsel. Strategy v8 prepared April 2026. Client meeting and presentation completed." },
+    { task:"Schedule in-office meeting with Ginger and Pat", assignee:"Cameron", status:"in_progress", deadline:null, notes:"Ginger available any day next week except May 1. Ginger on vacation May 26 - June 9." },
+    { task:"Prepare mediation statement for Judge Caschette", assignee:"Cameron", status:"in_progress", deadline:null, notes:"" },
+    { task:"Confirm mediation date with Judge Caschette's office", assignee:"Cameron", status:"in_progress", deadline:null, notes:"" },
+    { task:"Develop trust restructuring concept for membership interest succession", assignee:"Cameron", status:"in_progress", deadline:null, notes:"" },
+    { task:"Work through fiduciary duty questions on restructuring", assignee:"Cameron", status:"in_progress", deadline:null, notes:"" },
+    { task:"Coordinate schedules with Keith Edwards (co-counsel)", assignee:"Cameron", status:"in_progress", deadline:null, notes:"" }
+  ]},
+  { client:"Rademacher, Eric", tasks:[
+    { task:"LLC Buyout", assignee:"Kennedy", status:"in_progress", deadline:null, notes:"Eric wants to sell membership interest. Need valuation." }
+  ]},
+  { client:"RRRS, LLP", tasks:[
+    { task:"Confirm execution of contract to buy and sell", assignee:"Kennedy", status:"waiting_counterparty", deadline:null, notes:"Buyers and brokers non-responsive. Rick looking to list property." }
+  ]},
+  { client:"Sun / River Run", isNew:true, tasks:[
+    { task:"Punchlist resolution with Grand County (Granby)", assignee:"Cameron", status:"in_progress", deadline:null, notes:"Punchlist remaining items from 2023. E. Prosser email to Granby on file. Town of Granby meeting scheduled April 30 at 11:00 AM with full Granby team and Sun team." },
+    { task:"Prepare for Town of Granby meeting (April 30, 11:00 AM)", assignee:"Cameron", status:"in_progress", deadline:"2026-04-30", urgent:true, notes:"Significant preparation required. Begin this week. Full Granby team and Sun team attending." }
+  ]},
+  { client:"Sun / Smith Creek", isNew:true, tasks:[
+    { task:"Sewer acceptance / Pre-Inclusion Agreement disputes", assignee:"Cameron", status:"in_progress", deadline:null, notes:"Open issues memo v2 complete. Bonding dispute: $128K. ESCO corporate guarantee issue." }
+  ]},
+  { client:"Sylvandale", isNew:true, tasks:[
+    { task:"A&R Partnership Agreement and CBT Water shares sale", assignee:"Cameron", status:"in_progress", deadline:null, notes:"A&R Partnership Agreement (unsigned) and CBT water share sale agreement (signed) on file." },
+    { task:"Withdraw from representation", assignee:"Cameron", status:"in_progress", deadline:null, notes:"" }
+  ]},
+  { client:"T-Bullets", isNew:true, tasks:[
+    { task:"Follow-up with Palmer City regarding Notice of Violation and Resolution Plan", assignee:"Cameron", status:"in_progress", deadline:null, notes:"" }
+  ]},
+  { client:"Teater, Shane", tasks:[
+    { task:"New entity formation / loan workout items", assignee:"James", status:"in_progress", deadline:null, notes:"Main project complete. Loan workout items ongoing." }
+  ]},
+  { client:"Tebo, Stephen", tasks:[
+    { task:"5555 Dahlia, notice of violation (Commerce City)", assignee:"Robyn", status:"in_progress", deadline:null, notes:"Protest mailed 4/14-4/15. Voicemails to code enforcement and D. Lugo on 4/14." }
+  ]},
+  { client:"Temple Grandin School", tasks:[
+    { task:"Real Estate Purchase", assignee:"James", status:"in_progress", deadline:null, notes:"In due diligence. w/f Survey. Connect with Water Team." }
+  ]},
+  { client:"Tract", isNew:true, tasks:[
+    { task:"Pueblo Annexation and Zoning (Morley Property)", assignee:"Cameron", status:"in_progress", deadline:null, notes:"Engagement letter signed 4/9/26. Pueblo annexation/zoning field guide v3 prepared. On hold pending state legislative matters." }
+  ]},
+  { client:"Tzap, Steve", tasks:[
+    { task:"Draft Petition for Annexation - Boulder Ranch Homes (8600 Baseline Rd.)", assignee:"Robyn", status:"waiting_counterparty", deadline:null, notes:"Draft petition completed and sent to City 4/21. Waiting for City response." },
+    { task:"NC exemption argument and factual record (Section 26-2-2(d)(3)(C))", assignee:"Cameron", status:"in_progress", deadline:null, notes:"King Soopers proximity or site constraint infeasibility arguments." },
+    { task:"Raw water dedication confirmation (Resolution 2021-56)", assignee:"Cameron", status:"in_progress", deadline:null, notes:"Confirm with Lafayette Public Works." },
+    { task:"Lafayette LUC adoption - June 2026 second reading", assignee:"Cameron", status:"in_progress", deadline:"2026-06-01", urgent:true, notes:"Window to negotiate code modifications extremely narrow. Decide strategy before June." }
+  ]},
+  { client:"Winger, Greg", tasks:[
+    { task:"Mineral Conveyance (Nebraska)", assignee:"James", status:"in_progress", deadline:null, notes:"Deeds drafted. Review and send to Greg." }
+  ]},
+];
+
+// ─── MODAL ────────────────────────────────────────────────────────
+function openModal(){ document.getElementById("modalOverlay").classList.add("open"); }
+function closeModal(){ document.getElementById("modalOverlay").classList.remove("open"); }
+function closeModalIfBg(e){ if(e.target===document.getElementById("modalOverlay"))closeModal(); }
+
+function sendUpdate(){
+  const client=document.getElementById("m-client").value.trim();
+  const task=document.getElementById("m-task").value.trim();
+  const type=document.getElementById("m-type").value;
+  const details=document.getElementById("m-details").value.trim();
+  if(!client||!details){ alert("Please fill in the Client/Matter and Details fields."); return; }
+  const subject=encodeURIComponent("DASHBOARD UPDATE: "+client);
+  const body=encodeURIComponent(
+    "CLIENT: "+client+"\n"+
+    (task?"TASK: "+task+"\n":"")+
+    "UPDATE: "+type+"\n"+
+    "DETAILS: "+details+"\n\n"+
+    "---\nSent from the Lyons Gaddis Client Status Dashboard"
+  );
+  window.location.href="mailto:cgrant@lyonsgaddis.com?subject="+subject+"&body="+body;
+  setTimeout(closeModal, 500);
+}
+
+// ─── DASHBOARD ────────────────────────────────────────────────────
+let curFilter="All", curSearch="", allOpen=false;
+function esc(s){if(!s)return"";return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+function today(){const d=new Date();return new Date(d.getFullYear(),d.getMonth(),d.getDate());}
+function parseDate(s){if(!s)return null;const[y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d);}
+function isOverdue(dl){return dl&&parseDate(dl)<today();}
+function isSoon(dl){if(!dl)return false;const d=parseDate(dl),t=today();return d>=t&&(d-t)<=7*86400000;}
+function fmtDate(dl){if(!dl)return null;const d=parseDate(dl);return d.toLocaleDateString("en-US",{month:"short",day:"numeric"});}
+function isUrgent(t){return t.urgent===true||isOverdue(t.deadline)||isSoon(t.deadline);}
+function urgWhy(t){if(isOverdue(t.deadline))return{cls:"urg-why-od",label:"Overdue"};if(isSoon(t.deadline))return{cls:"urg-why-soon",label:"Due Soon"};return{cls:"urg-why-flag",label:"Priority"};}
+function getFiltered(){return DATA.map(c=>({...c,tasks:c.tasks.filter(t=>(curFilter==="All"||t.assignee===curFilter)&&(curSearch===""||c.client.toLowerCase().includes(curSearch.toLowerCase())||t.task.toLowerCase().includes(curSearch.toLowerCase())||(t.notes&&t.notes.toLowerCase().includes(curSearch.toLowerCase()))))})).filter(c=>c.tasks.length>0);}
+
+function renderUrgentPanel(){
+  const items=[];
+  DATA.forEach(cl=>{cl.tasks.forEach(t=>{if(isUrgent(t))items.push({client:cl.client,t});});});
+  const el=document.getElementById("urgentPanel");
+  if(!items.length){el.innerHTML="";return;}
+  const rows=items.map(({client,t})=>{
+    const why=urgWhy(t),dlTxt=t.deadline?(isOverdue(t.deadline)?"&#9888; ":"")+fmtDate(t.deadline):"&mdash;",dlCls=isOverdue(t.deadline)?"dl-od":isSoon(t.deadline)?"dl-soon":"dl-ok",whoCls=t.assignee==="Unassigned"?"unassigned":"normal",whoTxt=t.assignee==="Unassigned"?"&#9888; Unassigned":esc(t.assignee);
+    return`<tr><td><span class="urgent-client">${esc(client)}</span></td><td class="urgent-task">${esc(t.task)}</td><td class="td-who ${whoCls}" style="white-space:nowrap">${whoTxt}</td><td><span class="badge ${S[t.status].cls}">${S[t.status].label}</span></td><td class="td-dl ${dlCls}">${dlTxt}</td><td><span class="urg-why ${why.cls}">${why.label}</span></td></tr>`;
+  }).join("");
+  el.innerHTML=`<div class="urgent-panel"><div class="urgent-panel-hdr"><span style="font-size:15px">&#9889;</span><h2>This Week</h2><span class="up-sub">Needs immediate attention</span><span class="urgent-count">${items.length} item${items.length!==1?"s":""}</span></div><table class="urgent-table"><thead><tr><th>Client</th><th>Task</th><th>Assigned</th><th>Status</th><th>Deadline</th><th>Why</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+
+function renderStats(f){
+  const total=f.reduce((n,c)=>n+c.tasks.length,0),waiting=f.reduce((n,c)=>n+c.tasks.filter(t=>t.status!=="in_progress").length,0),overdue=f.reduce((n,c)=>n+c.tasks.filter(t=>isOverdue(t.deadline)).length,0),unassigned=f.reduce((n,c)=>n+c.tasks.filter(t=>t.assignee==="Unassigned").length,0),urgent=DATA.reduce((n,c)=>n+c.tasks.filter(t=>isUrgent(t)).length,0);
+  document.getElementById("sub").textContent="Last updated: "+LAST_UPDATED+" \u2022 Cameron A. Grant \u2022 Lyons Gaddis, P.C.";
+  document.getElementById("statsBar").innerHTML=`<div class="stat"><span class="stat-val">${f.length}</span><span class="stat-lbl">Active Clients</span></div><div class="stat"><span class="stat-val">${total}</span><span class="stat-lbl">Open Tasks</span></div>${urgent>0?`<div class="stat"><span class="stat-val stat-urgent">${urgent}</span><span class="stat-lbl">This Week</span></div>`:""}${overdue>0?`<div class="stat"><span class="stat-val stat-danger">${overdue}</span><span class="stat-lbl">Overdue</span></div>`:""}<div class="stat"><span class="stat-val stat-warn">${waiting}</span><span class="stat-lbl">Waiting</span></div>${unassigned>0?`<div class="stat"><span class="stat-val stat-unassigned">${unassigned}</span><span class="stat-lbl">Unassigned</span></div>`:""}`;
+}
+
+function renderFilters(){document.getElementById("filters").innerHTML=ATTORNEYS.map(a=>`<button class="fbtn ${a==="Unassigned"?"unassigned-btn":""} ${a===curFilter?"on":""}" onclick="setFilter('${a}')">${a}</button>`).join("");}
+
+function renderProjects(){
+  const f=getFiltered();renderStats(f);renderUrgentPanel();const c=document.getElementById("proj");
+  if(!f.length){c.innerHTML='<div class="empty">No matters match your current filter.</div>';return;}
+  c.innerHTML=f.map((cl,idx)=>{
+    const hasOD=cl.tasks.some(t=>isOverdue(t.deadline)),hasUA=cl.tasks.some(t=>t.assignee==="Unassigned"),hasUrg=cl.tasks.some(t=>isUrgent(t)),assignees=[...new Set(cl.tasks.map(t=>t.assignee))].join(", ");
+    const rows=cl.tasks.map(t=>{const dlCls=isOverdue(t.deadline)?"dl-od":isSoon(t.deadline)?"dl-soon":"dl-ok",dlTxt=t.deadline?(isOverdue(t.deadline)?"&#9888; ":"")+fmtDate(t.deadline):"\u2014",whoCls=t.assignee==="Unassigned"?"unassigned":"normal",urgDot=isUrgent(t)?'<span class="urg-inline"></span>':"";return`<tr><td class="td-task">${urgDot}${esc(t.task)}</td><td class="td-who ${whoCls}">${t.assignee==="Unassigned"?"&#9888; Unassigned":esc(t.assignee)}</td><td><span class="badge ${S[t.status].cls}">${S[t.status].label}</span></td><td class="td-dl ${dlCls}">${dlTxt}</td><td class="td-notes">${t.notes?esc(t.notes):"\u2014"}</td></tr>`;}).join("");
+    return`<div class="card ${hasUA?"has-unassigned":""} ${hasUrg&&!hasUA?"has-urgent":""}"><div class="card-hdr" onclick="toggle(${idx})"><div class="hdr-left"><span class="cname">${esc(cl.client)}</span><span class="tc-badge">${cl.tasks.length} task${cl.tasks.length!==1?"s":""}</span>${hasOD?'<span class="od-badge">Overdue</span>':""}${hasUA?'<span class="ua-badge">Unassigned</span>':""}${hasUrg&&!hasOD?'<span class="urg-badge">This Week</span>':""}${cl.isNew?'<span class="new-badge">New</span>':""}</div><div class="hdr-right"><span class="assignee-list">${esc(assignees)}</span><span class="chev" id="ch${idx}">&#9660;</span></div></div><div class="task-body" id="tb${idx}"><table><thead><tr><th>Task</th><th>Assigned</th><th>Status</th><th>Deadline</th><th>Notes</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+  }).join("");
+}
+
+function toggle(idx){const tb=document.getElementById("tb"+idx),ch=document.getElementById("ch"+idx);if(!tb)return;const o=tb.classList.contains("open");tb.classList.toggle("open",!o);ch.classList.toggle("open",!o);}
+function toggleAll(){allOpen=!allOpen;document.getElementById("xpbtn").textContent=allOpen?"Collapse All":"Expand All";document.querySelectorAll(".task-body").forEach(el=>el.classList.toggle("open",allOpen));document.querySelectorAll(".chev").forEach(el=>el.classList.toggle("open",allOpen));}
+function setFilter(f){curFilter=f;renderFilters();renderProjects();}
+document.getElementById("srch").addEventListener("input",e=>{curSearch=e.target.value;renderProjects();});
+renderFilters();
+renderProjects();
+</script>
+</body>
+</html>
