@@ -199,7 +199,7 @@ tr:hover td { background: #f8fafc; }
 </div>
 
 <script>
-const LAST_UPDATED = "April 21, 2026";
+const LAST_UPDATED = "April 22, 2026";
 const ATTORNEYS = ["All","Cameron","James","Kennedy","Robyn","Unassigned"];
 const S = {
   in_progress:          { label:"In Progress",     cls:"b-ip" },
@@ -214,9 +214,6 @@ const DATA = [
   { client:"Arete Vistas", tasks:[
     { task:"Cost Sharing Agreement", assignee:"Cameron", status:"waiting_counterparty", deadline:null, notes:"Emailed Josh on 4/3 for update." }
   ]},
-  { client:"Barefoot", isNew:true, tasks:[
-    { task:"LTWD Filing 7E matter", assignee:"Cameron", status:"in_progress", deadline:null, notes:"LTWD documents reviewed. Meeting prep completed." }
-  ]},
   { client:"Bestall, Jack", tasks:[
     { task:"Monitor LLC matter", assignee:"Cameron", status:"in_progress", deadline:null, notes:"Keith estimates $1,500 to file. Jack says go ahead." },
     { task:"LLC financial information litigation", assignee:"Cameron", status:"in_progress", deadline:null, notes:"Statutory demand ignored by Russ. Complaint filed and copy sent to LLC counsel. Keith Edwards (litigation group) managing ongoing matter." },
@@ -230,7 +227,8 @@ const DATA = [
     { task:"LTWD Permit Issues Filing 7A", assignee:"Cameron", status:"in_progress", deadline:null, notes:"" },
     { task:"Review O&G relinquishments", assignee:"Robyn", status:"in_progress", deadline:null, notes:"Cameron to review. Done, sent overview to CAG for review." },
     { task:"Sarah Wagner Easement Acquisition", assignee:"Cameron", status:"in_progress", deadline:null, notes:"" },
-    { task:"Draft correspondence to Little Thompson Water District re fee calculation issues", assignee:"Cameron", status:"in_progress", deadline:null, notes:"On hold." }
+    { task:"Draft correspondence to Little Thompson Water District re fee calculation issues", assignee:"Cameron", status:"in_progress", deadline:null, notes:"On hold." },
+    { task:"LTWD Filing 7E matter (formerly Barefoot Lakes)", assignee:"Cameron", status:"in_progress", deadline:null, notes:"LTWD documents reviewed. Meeting prep completed. Bittersweet Farms case law on file." }
   ]},
   { client:"Carter, Larry", tasks:[
     { task:"Boulder County Easement", assignee:"James", status:"waiting_counterparty", deadline:null, notes:"w/f parties to complete settlement. Past due invoices noted." }
@@ -251,7 +249,6 @@ const DATA = [
     { task:"2130 Mountain View (inspection resolution deadline)", assignee:"Robyn", status:"in_progress", deadline:"2026-04-24", urgent:true, notes:"Proposed resolution sent to buyer's broker 4/21. Resolution deadline remains 4/24." },
     { task:"Debt Restructure Plan", assignee:"Cameron", status:"in_progress", deadline:null, notes:"" },
     { task:"2130 Mountain View Sale", assignee:"Cameron", status:"in_progress", deadline:null, notes:"No title objections. Next deadline TBD." },
-    { task:"Terry Street RR Crossing Issue", assignee:"Cameron", status:"in_progress", deadline:null, notes:"" }
   ]},
   { client:"Doug & Jody Robinson", tasks:[
     { task:"LLC Formation and Contribution of Rental Property", assignee:"Robyn", status:"waiting_client", deadline:null, notes:"Waiting for client, never responded. Follow up or no?" }
@@ -295,8 +292,8 @@ const DATA = [
     { task:"800 S Franklin Demand Letter", assignee:"Cameron", status:"in_progress", deadline:null, notes:"Lit scheduling mediation (ECP/JSR)." },
     { task:"Citywide Bank Litigation", assignee:"Cameron", status:"in_progress", deadline:null, notes:"Respond to Complaint." }
   ]},
-  { client:"Kendrick", tasks:[
-    { task:"Assist with Aspen-area real estate purchase", assignee:"Robyn", status:"waiting_client", deadline:null, notes:"w/f client." }
+  { client:"GCGP", isNew:true, tasks:[
+    { task:"Closing Docs", assignee:"James", status:"in_progress", deadline:"2026-04-30", notes:"Closing 4/30. Working with Robyn to prepare closing docs." }
   ]},
   { client:"Lofquist, Randy", tasks:[
     { task:"Easement Evaluation at Sugar Mill Site", assignee:"James", status:"in_progress", deadline:null, notes:"" }
@@ -315,10 +312,17 @@ const DATA = [
     { task:"Assemble cost estimates for building demolition", assignee:"Unassigned", status:"in_progress", deadline:null, notes:"Previously assigned to Laura (resigned). w/f estimates. CAG to get Pollard dealership demo contact." },
     { task:"Obtain Mineral Appraisal/Valuation", assignee:"James", status:"in_progress", deadline:null, notes:"" },
     { task:"White Rock ditch water share evaluation strategy", assignee:"Robyn", status:"in_progress", deadline:null, notes:"RLS draft email to CAG 4/9. Need approval to respond to client and approach Julie Pasillas." },
-    { task:"Lexington builder outreach strategy (Civitas)", assignee:"Cameron", status:"in_progress", deadline:null, notes:"Client email v4 prepared. Builder targets: Oakwood, LGI, Richmond American, Century Communities, Landmark." }
+    { task:"Lexington builder outreach strategy (Civitas)", assignee:"Cameron", status:"in_progress", deadline:null, notes:"Builder targets: Sun Communities, Brookfield B2R, Boulder Creek, Bridgewater, Toll Brothers, Landmark, Oakwood, LGI, Richmond American, Century Communities. 81-acre site." },
+    { task:"Contact Rich Coolidge (Civitas) re SUA and mineral rights", assignee:"Cameron", status:"in_progress", deadline:null, notes:"Via A.J. Krieger referral. Giving up mineral rights for easement release: non-starter." },
+    { task:"Review SUA temporary drilling footprint language with James", assignee:"Cameron", status:"in_progress", deadline:null, notes:"Assess whether COGCC reforms make new well permits legally infeasible on site." },
+    { task:"Follow up with Max on site design layout with easement in place", assignee:"Cameron", status:"in_progress", deadline:null, notes:"Alex asked Max to produce layout showing Staenberg parcel with easement." },
+    { task:"Follow up with Chad Rodriguez (TruMark) re residential proposal", assignee:"Cameron", status:"in_progress", deadline:"2026-04-21", notes:"Expected proposal by 4/21. Follow up if not received." },
+    { task:"Get Redland proposal scope for residential land infrastructure", assignee:"Cameron", status:"in_progress", deadline:null, notes:"Need picture of infrastructure requirements for residential land beyond the commercial piece." },
+    { task:"Forward Robyn water write-up to Alex and Sam", assignee:"Cameron", status:"in_progress", deadline:null, notes:"" },
+    { task:"Oxy Sable Glen: confirm election packet and lease status", assignee:"James", status:"in_progress", deadline:null, notes:"Notices may have gone to old address. Property held by Pan Trinity LLC. Issue: 12.5% vs. 20% royalty." }
   ]},
   { client:"Nash, Patty", tasks:[
-    { task:"Assist with Lease Matter", assignee:"Robyn", status:"waiting_client", deadline:null, notes:"P. Nash responded 4/13 with new lease. Requested term sheet." }
+    { task:"Assist with Lease Matter", assignee:"Robyn", status:"waiting_client", deadline:null, notes:"Draft term sheet sent to CAG/SMS for review 4/16. Waiting on feedback, then send to client." }
   ]},
   { client:"Nelson Family", tasks:[
     { task:"Form entity to hold Nelson/Redmond properties", assignee:"Robyn", status:"waiting_client", deadline:null, notes:"Update on approval from family?" }
@@ -366,7 +370,8 @@ const DATA = [
     { task:"New entity formation / loan workout items", assignee:"James", status:"in_progress", deadline:null, notes:"Main project complete. Loan workout items ongoing." }
   ]},
   { client:"Tebo, Stephen", tasks:[
-    { task:"5555 Dahlia, notice of violation (Commerce City)", assignee:"Robyn", status:"in_progress", deadline:null, notes:"Protest mailed 4/14-4/15. Voicemails to code enforcement and D. Lugo on 4/14." }
+    { task:"5555 Dahlia, notice of violation (Commerce City)", assignee:"Robyn", status:"in_progress", deadline:null, notes:"Protest mailed 4/14-4/15. Voicemails to code enforcement and D. Lugo on 4/14." },
+    { task:"Respond to Commerce City denial of protest", assignee:"Cameron", status:"in_progress", deadline:"2026-04-22", urgent:true, notes:"Priority: high. Commerce City denied the protest; response required." }
   ]},
   { client:"Temple Grandin School", tasks:[
     { task:"Real Estate Purchase", assignee:"James", status:"in_progress", deadline:null, notes:"In due diligence. w/f Survey. Connect with Water Team." }
