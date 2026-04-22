@@ -124,6 +124,10 @@ tr:hover td { background: #f8fafc; }
 .urg-badge { font-size: 10px; background: #fff7ed; color: #c2410c; padding: 2px 7px; border-radius: 9px; font-weight: 600; border: 1px solid #fed7aa; }
 .card.has-urgent:not(.has-unassigned) { border-left: 3px solid #ea580c; }
 .urg-inline { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #ea580c; margin-right: 5px; vertical-align: middle; flex-shrink: 0; }
+
+/* Sub-group headers within a matter */
+.subgroup-row td { padding: 0; }
+.subgroup-hdr { background: #eef2f7; color: #1e3a5f; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; padding: 7px 14px !important; border-top: 1px solid #cbd5e1 !important; border-bottom: 1px solid #e2e8f0 !important; }
 </style>
 </head>
 <body>
@@ -240,9 +244,45 @@ const DATA = [
     { task:"Review and Revise Annexation Agreement", assignee:"Robyn", status:"in_progress", deadline:null, notes:"Comments sent to CAG 3/9 for review." },
     { task:"Wait for city response to proposal sent April 6th", assignee:"Cameron", status:"waiting_counterparty", deadline:null, notes:"Follow-up sent to Molly on April 20th." }
   ]},
-  { client:"Diamond G", tasks:[
-    { task:"Holcim Fill Agreement", assignee:"Cameron", status:"waiting_counterparty", deadline:null, notes:"Draft sent to Holcim on 4/2." },
-    { task:"Valvoline Transaction", assignee:"Cameron", status:"waiting_client", deadline:null, notes:"Draft sent to client on 4/2." }
+  { client:"Golden (Diamond G, Golden Farm, Fredstrom, Golden/Nelson)", tasks:[
+    // ─── Diamond G ──────────────────────────────────────────────
+    { subgroup:"Diamond G", task:"255 EKP Operating Agreement: confirm special allocation language", assignee:"Cameron", status:"in_progress", deadline:null, notes:"NEW per 4/22 call. Significant 2025 loss anticipated; confirm OA permits special allocation of basis. CG to study OA section and identify any updates needed." },
+    { subgroup:"Diamond G", task:"Holcim/Amrize Fill Agreement", assignee:"Cameron", status:"waiting_counterparty", deadline:null, notes:"Updated 4/22: Latest revision sent to Amrize ~4/12. Our draft scopes work to two pits; theirs is overly broad. Amrize plowing ahead with fill/compaction; Reggie estimates ~1 month to completion." },
+    { subgroup:"Diamond G", task:"Develop and circulate combined Amrize resolution strategy", assignee:"Cameron", status:"in_progress", deadline:null, notes:"NEW per 4/22 call. Consolidated strategy memo covering fill agreement, $250K escrow release, Hwy 119 abandonment, Fredstrom default, royalty pricing. Circulate to Reggie/Drew/group for review." },
+    { subgroup:"Diamond G", task:"Push Amrize for $250K escrow release", assignee:"Cameron", status:"in_progress", deadline:null, notes:"NEW per 4/22 call. Escrow funded ~4 yrs ago to protect against neighbor claims (purpose now moot). Release requires termination of underlying agreement that requires city council action. Use FirstBank renewal/move pressure as impetus. No scenario where Amrize is entitled to the funds." },
+    { subgroup:"Diamond G", task:"Demand Amrize royalty pricing data and methodology", assignee:"Cameron", status:"in_progress", deadline:null, notes:"NEW per 4/22 call. Amrize has never provided pricing data. Lease methodology hard-coded but they owe contractual demonstration of calculation. Add to combined strategy memo." },
+    { subgroup:"Diamond G", task:"Investigate DRMS bond release process and landowner objection rights", assignee:"Cameron", status:"in_progress", deadline:null, notes:"NEW per 4/22 call. Determine if landowner has standing to file objection with DRMS when operator seeks reclamation bond release. Use as pressure point on Amrize." },
+    { subgroup:"Diamond G", task:"Evaluate proposed reclamation plan modification (additional fill dirt)", assignee:"Cameron", status:"in_progress", deadline:null, notes:"NEW per 4/22 call. Reggie wants to bring in dirt for later use while Amrize is still on site. Lower priority; not a deal-killer if not done." },
+    { subgroup:"Diamond G", task:"Track Amrize-related billing for inter-entity reallocation", assignee:"Cameron", status:"in_progress", deadline:null, notes:"NEW per 4/22 call. All Amrize bills currently going to Diamond G but contained in single statement. Coordinate with Reggie on potential reallocation between Diamond G, Golden Farm, and concrete entities." },
+    { subgroup:"Diamond G", task:"Final close-out of Amrize permit (Irwin)", assignee:"Cameron", status:"in_progress", deadline:null, notes:"On list but not active. Will coordinate with bond release strategy and DRMS objection planning per 4/22 strategy memo." },
+    { subgroup:"Diamond G", task:"Valvoline Transaction", assignee:"Cameron", status:"waiting_client", deadline:null, notes:"Draft sent to client on 4/2." },
+
+    // ─── House on Airport (Cronk Sale) ──────────────────────────
+    { subgroup:"House on Airport (Cronk Sale)", task:"Review title commitment from title company", assignee:"Cameron", status:"in_progress", deadline:null, notes:"NEW per 4/22 call. Title commitment circulated 4/21. CG to review for issues." },
+    { subgroup:"House on Airport (Cronk Sale)", task:"Finalize legal description for conveyance", assignee:"Robyn", status:"in_progress", deadline:null, notes:"NEW per 4/22 call. Robyn working on it; legal was missing items." },
+    { subgroup:"House on Airport (Cronk Sale)", task:"Re-review replacement property and reallocation provisions", assignee:"Cameron", status:"in_progress", deadline:null, notes:"NEW per 4/22 call. CG drafted; needs re-read to confirm structure of carve-out from Track 1 to Track 2 (condominiumization concept) and reallocation mechanics." },
+    { subgroup:"House on Airport (Cronk Sale)", task:"Determine whether lot line adjustment with city is required", assignee:"Cameron", status:"in_progress", deadline:null, notes:"NEW per 4/22 call. Confirm whether condominiumization or reallocation triggers a lot line adjustment with the City." },
+    { subgroup:"House on Airport (Cronk Sale)", task:"Closing: house on airport (Cronk)", assignee:"Cameron", status:"in_progress", deadline:"2026-05-08", urgent:true, notes:"Target closing date 5/8. All party signatures complete. Drive to closing with title commitment review, finalized legal, replacement property docs, and deed of trust." },
+
+    // ─── Golden Farm ─────────────────────────────────────────────
+    { subgroup:"Golden Farm", task:"Reallocate extraordinary reclamation costs from concrete to farm side", assignee:"Cameron", status:"in_progress", deadline:null, notes:"NEW per 4/22 call. Push slurry walls, compaction, and Amrize-driven costs to Golden Farm as cost of delivering parcel to concrete. Coordinate with Reggie on accounting/tax treatment." },
+    { subgroup:"Golden Farm", task:"Draft modification to Golden Farm note (extend term, evaluate interest rate)", assignee:"Cameron", status:"in_progress", deadline:null, notes:"NEW per 4/22 call. Cannot modify principal but can extend term (~5 yrs additional runway) and adjust interest rate without tax consequence. Coordinate with Reggie." },
+    { subgroup:"Golden Farm", task:"Family alignment discussion re note restructure", assignee:"Cameron", status:"in_progress", deadline:null, notes:"NEW per 4/22 call. Restructure requires family alignment before execution." },
+
+    // ─── Fredstrom (Freedom property) ───────────────────────────
+    { subgroup:"Fredstrom", task:"Pursue Amrize payment for defaulted mineral purchase", assignee:"Cameron", status:"in_progress", deadline:null, notes:"NEW per 4/22 call. Structured as sale of minerals in place (not lease/royalty). Title analysis indicates Amrize holds title via recorded deed. Position: you bought, you owe. Resolution would unlock county/accounting/lot line issues." },
+    { subgroup:"Fredstrom", task:"Confirm whether Amrize recorded formal relinquishment of Fredstrom minerals", assignee:"Cameron", status:"in_progress", deadline:null, notes:"NEW per 4/22 call. Reggie thought Amrize relinquished, but may have only been Milliken. Pull recorded title to confirm." },
+    { subgroup:"Fredstrom", task:"Fredstrom Minerals (AmRise Claim)", assignee:"Cameron", status:"in_progress", deadline:null, notes:"CG to follow up with Barb re lot line adjustment." },
+    { subgroup:"Fredstrom", task:"Address County Title Objections (BoCo)", assignee:"Cameron", status:"in_progress", deadline:null, notes:"" },
+    { subgroup:"Fredstrom", task:"Contact Boulder County re Fredstrom closing", assignee:"Cameron", status:"in_progress", deadline:null, notes:"" },
+    { subgroup:"Fredstrom", task:"Contact Boulder County re lot line adjustment", assignee:"Cameron", status:"in_progress", deadline:null, notes:"" },
+
+    // ─── Golden/Nelson ───────────────────────────────────────────
+    { subgroup:"Golden/Nelson", task:"Member Resolution (BoCo)", assignee:"Kennedy", status:"in_progress", deadline:null, notes:"Resolution drafted 11/9. CAG to review." },
+    { subgroup:"Golden/Nelson", task:"Evaluate lease re Amrize abandoning minerals N of Hwy 119", assignee:"Cameron", status:"in_progress", deadline:null, notes:"Reliance theory: D-G invested in intersection improvements based on the mining deal, so Amrize cannot walk away without paying anticipated royalties. Amrize position: business decision based on reserves vs. extraction cost. Tie into combined Amrize strategy." },
+    { subgroup:"Golden/Nelson", task:"Evaluate whether I can represent the Nelsons", assignee:"Cameron", status:"in_progress", deadline:null, notes:"" },
+    { subgroup:"Golden/Nelson", task:"Revise equestrian access lease with neighbor", assignee:"Cameron", status:"in_progress", deadline:null, notes:"" },
+    { subgroup:"Golden/Nelson", task:"Reserve conference room for Golden and Nelson (first week of June)", assignee:"Cameron", status:"in_progress", deadline:"2026-06-01", notes:"" }
   ]},
   { client:"Doug & JoAnna Grant", tasks:[
     { task:"Record Affidavit re: Reimbursement", assignee:"Unassigned", status:"in_progress", deadline:null, notes:"Previously assigned to Laura (resigned). Notice to Lupton Land sent 12/24/25." },
@@ -270,18 +310,6 @@ const DATA = [
   { client:"Fry, Jennifer", tasks:[
     { task:"LLC Tax Evaluation", assignee:"Cameron", status:"waiting_counterparty", deadline:null, notes:"Sent to CPA after April 15th." },
     { task:"Terminate relationship with client", assignee:"Cameron", status:"in_progress", deadline:null, notes:"" }
-  ]},
-  { client:"Golden (Nelson)", tasks:[
-    { task:"Fredstrom Minerals (AmRise Claim)", assignee:"Cameron", status:"in_progress", deadline:null, notes:"CG to follow up with Barb re lot line adjustment." },
-    { task:"Address County Title Objections (BoCo)", assignee:"Cameron", status:"in_progress", deadline:null, notes:"" },
-    { task:"Member Resolution (BoCo)", assignee:"Kennedy", status:"in_progress", deadline:null, notes:"Resolution drafted 11/9. CAG to review." },
-    { task:"Reach out to Amrize re fill agreement", assignee:"Cameron", status:"in_progress", deadline:null, notes:"" },
-    { task:"Evaluate lease re Amrize abandoning minerals N of Hwy 119", assignee:"Cameron", status:"in_progress", deadline:null, notes:"" },
-    { task:"Evaluate whether I can represent the Nelsons", assignee:"Cameron", status:"in_progress", deadline:null, notes:"" },
-    { task:"Revise equestrian access lease with neighbor", assignee:"Cameron", status:"in_progress", deadline:null, notes:"" },
-    { task:"Contact Boulder County re Fredstrom closing", assignee:"Cameron", status:"in_progress", deadline:null, notes:"" },
-    { task:"Contact Boulder County re lot line adjustment", assignee:"Cameron", status:"in_progress", deadline:null, notes:"" },
-    { task:"Reserve conference room for Golden and Nelson (first week of June)", assignee:"Cameron", status:"in_progress", deadline:"2026-06-01", notes:"" }
   ]},
   { client:"Grant Brothers", tasks:[
     { task:"Mineral Conveyance and Dissolution", assignee:"Cameron", status:"waiting_client", deadline:null, notes:"w/f Doug approval of dissolution plan." },
@@ -371,7 +399,7 @@ const DATA = [
   ]},
   { client:"Tebo, Stephen", tasks:[
     { task:"5555 Dahlia, notice of violation (Commerce City)", assignee:"Robyn", status:"in_progress", deadline:null, notes:"Protest mailed 4/14-4/15. Voicemails to code enforcement and D. Lugo on 4/14." },
-    { task:"Respond to Commerce City denial of protest", assignee:"Cameron", status:"in_progress", deadline:"2026-04-22", urgent:true, notes:"Priority: high. Commerce City denied the protest; response required." }
+    { task:"Respond to Commerce City denial of protest", assignee:"Cameron", status:"waiting_counterparty", deadline:null, notes:"Response submitted 4/21. Waiting on Commerce City." }
   ]},
   { client:"Temple Grandin School", tasks:[
     { task:"Real Estate Purchase", assignee:"James", status:"in_progress", deadline:null, notes:"In due diligence. w/f Survey. Connect with Water Team." }
@@ -450,7 +478,13 @@ function renderProjects(){
   if(!f.length){c.innerHTML='<div class="empty">No matters match your current filter.</div>';return;}
   c.innerHTML=f.map((cl,idx)=>{
     const hasOD=cl.tasks.some(t=>isOverdue(t.deadline)),hasUA=cl.tasks.some(t=>t.assignee==="Unassigned"),hasUrg=cl.tasks.some(t=>isUrgent(t)),assignees=[...new Set(cl.tasks.map(t=>t.assignee))].join(", ");
-    const rows=cl.tasks.map(t=>{const dlCls=isOverdue(t.deadline)?"dl-od":isSoon(t.deadline)?"dl-soon":"dl-ok",dlTxt=t.deadline?(isOverdue(t.deadline)?"&#9888; ":"")+fmtDate(t.deadline):"\u2014",whoCls=t.assignee==="Unassigned"?"unassigned":"normal",urgDot=isUrgent(t)?'<span class="urg-inline"></span>':"";return`<tr><td class="td-task">${urgDot}${esc(t.task)}</td><td class="td-who ${whoCls}">${t.assignee==="Unassigned"?"&#9888; Unassigned":esc(t.assignee)}</td><td><span class="badge ${S[t.status].cls}">${S[t.status].label}</span></td><td class="td-dl ${dlCls}">${dlTxt}</td><td class="td-notes">${t.notes?esc(t.notes):"\u2014"}</td></tr>`;}).join("");
+    let lastSub=null;
+    const rows=cl.tasks.map(t=>{
+      const dlCls=isOverdue(t.deadline)?"dl-od":isSoon(t.deadline)?"dl-soon":"dl-ok",dlTxt=t.deadline?(isOverdue(t.deadline)?"&#9888; ":"")+fmtDate(t.deadline):"\u2014",whoCls=t.assignee==="Unassigned"?"unassigned":"normal",urgDot=isUrgent(t)?'<span class="urg-inline"></span>':"";
+      let sgHdr="";
+      if(t.subgroup&&t.subgroup!==lastSub){sgHdr=`<tr class="subgroup-row"><td colspan="5" class="subgroup-hdr">${esc(t.subgroup)}</td></tr>`;lastSub=t.subgroup;}
+      return sgHdr+`<tr><td class="td-task">${urgDot}${esc(t.task)}</td><td class="td-who ${whoCls}">${t.assignee==="Unassigned"?"&#9888; Unassigned":esc(t.assignee)}</td><td><span class="badge ${S[t.status].cls}">${S[t.status].label}</span></td><td class="td-dl ${dlCls}">${dlTxt}</td><td class="td-notes">${t.notes?esc(t.notes):"\u2014"}</td></tr>`;
+    }).join("");
     return`<div class="card ${hasUA?"has-unassigned":""} ${hasUrg&&!hasUA?"has-urgent":""}"><div class="card-hdr" onclick="toggle(${idx})"><div class="hdr-left"><span class="cname">${esc(cl.client)}</span><span class="tc-badge">${cl.tasks.length} task${cl.tasks.length!==1?"s":""}</span>${hasOD?'<span class="od-badge">Overdue</span>':""}${hasUA?'<span class="ua-badge">Unassigned</span>':""}${hasUrg&&!hasOD?'<span class="urg-badge">This Week</span>':""}${cl.isNew?'<span class="new-badge">New</span>':""}</div><div class="hdr-right"><span class="assignee-list">${esc(assignees)}</span><span class="chev" id="ch${idx}">&#9660;</span></div></div><div class="task-body" id="tb${idx}"><table><thead><tr><th>Task</th><th>Assigned</th><th>Status</th><th>Deadline</th><th>Notes</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
   }).join("");
 }
