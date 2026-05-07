@@ -203,7 +203,7 @@ tr:hover td { background: #f8fafc; }
 </div>
 
 <script>
-const LAST_UPDATED = "April 23, 2026";
+const LAST_UPDATED = "May 7, 2026";
 const ATTORNEYS = ["All","Cameron","James","Kennedy","Robyn","Unassigned"];
 const S = {
   in_progress:          { label:"In Progress",     cls:"b-ip" },
@@ -228,6 +228,7 @@ const DATA = [
   ]},
   { client:"Brookfield (BRP)", tasks:[
     { task:"Shell Right-of-Way Ditch Issue", assignee:"Cameron", status:"in_progress", deadline:null, notes:"" },
+    { task:"Schell Property / No. 3 Box Culvert Prescriptive Easement Analysis", assignee:"Cameron", status:"in_progress", deadline:null, notes:"As-builts analysis initiated 5/6. Jeffrey J. Kahn involved. Birch location. Prescriptive easement evaluation in progress." },
     { task:"LTWD Permit Issues Filing 7A", assignee:"Cameron", status:"in_progress", deadline:null, notes:"" },
     { task:"Review O&G relinquishments", assignee:"Robyn", status:"in_progress", deadline:null, notes:"Cameron to review. Done, sent overview to CAG for review." },
     { task:"Sarah Wagner Easement Acquisition", assignee:"Cameron", status:"in_progress", deadline:null, notes:"" },
@@ -286,7 +287,7 @@ const DATA = [
   ]},
   { client:"Doug & JoAnna Grant", tasks:[
     { task:"Record Affidavit re: Reimbursement", assignee:"Unassigned", status:"in_progress", deadline:null, notes:"Previously assigned to Laura (resigned). Notice to Lupton Land sent 12/24/25." },
-    { task:"2130 Mountain View (inspection resolution deadline)", assignee:"Robyn", status:"in_progress", deadline:"2026-04-24", urgent:true, notes:"Proposed resolution sent to buyer's broker 4/21. Resolution deadline remains 4/24." },
+    { task:"2130 Mountain View (inspection resolution deadline)", assignee:"Robyn", status:"in_progress", deadline:"2026-04-24", urgent:true, notes:"Proposed resolution sent to buyer's broker 4/21. Buyer response received 4/22. Deadline 4/24 passed. Inspection objection response sent by Cameron 4/27. Awaiting buyer reply." },
     { task:"Debt Restructure Plan", assignee:"Cameron", status:"in_progress", deadline:null, notes:"" },
     { task:"2130 Mountain View Sale", assignee:"Cameron", status:"in_progress", deadline:null, notes:"No title objections. Next deadline TBD." },
   ]},
@@ -301,7 +302,7 @@ const DATA = [
     { task:"Draft proposal for cost reimbursement to Town of Erie", assignee:"Cameron", status:"in_progress", deadline:null, notes:"" }
   ]},
   { client:"Erie Four Corners", tasks:[
-    { task:"Waldner Litigation (DJR / Pounds v. Waldner)", assignee:"Cameron", status:"in_progress", deadline:"2026-05-05", urgent:true, notes:"Mediation May 5th. DJR LLC Class B/C distribution analysis complete." }
+    { task:"Waldner Litigation (DJR / Pounds v. Waldner)", assignee:"Cameron", status:"in_progress", deadline:null, notes:"Mediation was May 5. Cameron was in Houston (MD Anderson) and could not attend. Bond analysis complete: E4C holds $1,875,000 subordinate revenue bond (Four Corners BID, 7% annual, matures 2052) proposed as settlement instrument to Dave Waldner. Settlement structure: Dave takes bond; Walt keeps $700K cash and full property sale waterfall. Dave's litigation ceiling $300K–$1.1M after Tebo offset and DJR waterfall. Need: confirm mediation outcome with Jeff Rose/Walt; CJ to provide BID senior bond retirement schedule for present-value analysis. ~$5M additional debt capacity in BID/Metro District may further subordinate the bond if issued as senior debt." }
   ]},
   { client:"Frye, Chris", tasks:[
     { task:"Fox Hill Loan Matters", assignee:"James", status:"waiting_client", deadline:null, notes:"w/f client. Loan docs still pending." },
@@ -321,7 +322,7 @@ const DATA = [
     { task:"Citywide Bank Litigation", assignee:"Cameron", status:"in_progress", deadline:null, notes:"Respond to Complaint." }
   ]},
   { client:"GCGP", isNew:true, tasks:[
-    { task:"Closing Docs", assignee:"James", status:"in_progress", deadline:"2026-04-30", notes:"Closing 4/30. Working with Robyn to prepare closing docs." }
+    { task:"Closing Docs", assignee:"James", status:"in_progress", deadline:"2026-04-30", urgent:true, notes:"Closing TOMORROW 4/30. CVP/Pronghorn DB vacant land transaction. Active commitment email chain 4/29 (Godbold, Ryan Ramey/Cole Valley Partners, Derek Greenhouse). Recording authorized per Godbold 4/29." }
   ]},
   { client:"Lofquist, Randy", tasks:[
     { task:"Easement Evaluation at Sugar Mill Site", assignee:"James", status:"in_progress", deadline:null, notes:"" }
@@ -405,7 +406,7 @@ const DATA = [
     { task:"Real Estate Purchase", assignee:"James", status:"in_progress", deadline:null, notes:"In due diligence. w/f Survey. Connect with Water Team." }
   ]},
   { client:"Tract", isNew:true, tasks:[
-    { task:"Pueblo Annexation and Zoning (Morley Property)", assignee:"Cameron", status:"in_progress", deadline:null, notes:"Engagement letter signed 4/9/26. Pueblo annexation/zoning field guide v3 prepared. On hold pending state legislative matters." }
+    { task:"Pueblo Annexation and Zoning (Morley Property)", assignee:"Cameron", status:"in_progress", deadline:"2026-05-15", notes:"Engagement letter signed 4/9/26. Field guide v3 prepared. 12-pg Annexation Questions memo drafted 4/27 in response to Erin Fosdick inquiry, target 5/15/26 internal delivery to Robyn. Threshold verification: parcel-by-parcel distance pre/post Morley annexation needed before advising City track feasible. Memo includes hedged client-facing reply for Robyn to send post-verification. Cite-check current PMC Title XVII section numbering before client correspondence." }
   ]},
   { client:"Tzap, Steve", tasks:[
     { task:"Draft Petition for Annexation - Boulder Ranch Homes (8600 Baseline Rd.)", assignee:"Robyn", status:"waiting_counterparty", deadline:null, notes:"Draft petition completed and sent to City 4/21. Waiting for City response." },
@@ -489,12 +490,4 @@ function renderProjects(){
   }).join("");
 }
 
-function toggle(idx){const tb=document.getElementById("tb"+idx),ch=document.getElementById("ch"+idx);if(!tb)return;const o=tb.classList.contains("open");tb.classList.toggle("open",!o);ch.classList.toggle("open",!o);}
-function toggleAll(){allOpen=!allOpen;document.getElementById("xpbtn").textContent=allOpen?"Collapse All":"Expand All";document.querySelectorAll(".task-body").forEach(el=>el.classList.toggle("open",allOpen));document.querySelectorAll(".chev").forEach(el=>el.classList.toggle("open",allOpen));}
-function setFilter(f){curFilter=f;renderFilters();renderProjects();}
-document.getElementById("srch").addEventListener("input",e=>{curSearch=e.target.value;renderProjects();});
-renderFilters();
-renderProjects();
-</script>
-</body>
-</html>
+function toggle(idx){const tb=document.getElementById("tb"+idx),ch=document.getElementById("ch"+idx);if(!tb)return;const o=tb.classList.contains("open")
