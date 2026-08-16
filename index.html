@@ -1,4 +1,13 @@
 <!DOCTYPE html>
+<script type="application/json" id="cowork-artifact-meta">
+{
+  "name": "Client Status Dashboard",
+  "schemaVersion": 1,
+  "description": "Persistent client status dashboard for Cameron Grant at Lyons Gaddis. Shows all active matters grouped by client, filterable by team member (Cameron, James, Kennedy, Robyn, Laura), with status badges, deadlines, and notes. Data is embedded in the artifact and updated by Claude when Cameron requests changes.",
+  "mcpTools": [],
+  "mcpServerNames": []
+}
+</script>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -12,8 +21,11 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, sa
 .header { background: #1e3a5f; color: white; padding: 18px 24px 14px; display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
 .header-text h1 { font-size: 18px; font-weight: 700; letter-spacing: -0.2px; }
 .header-text .sub { font-size: 11px; color: #93b4d4; margin-top: 3px; }
+.hdr-btns { display: flex; gap: 8px; }
 .submit-btn { background: #2563eb; color: white; border: none; border-radius: 8px; padding: 9px 16px; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: background 0.15s; display: flex; align-items: center; gap: 6px; text-decoration: none; }
 .submit-btn:hover { background: #1d4ed8; }
+.digest-btn { background: #0d9488; }
+.digest-btn:hover { background: #0f766e; }
 
 .readonly-banner { background: #1e40af; color: #bfdbfe; font-size: 11px; padding: 7px 24px; border-bottom: 1px solid #1d4ed8; display: flex; align-items: center; gap: 8px; }
 .readonly-banner strong { color: white; }
@@ -27,6 +39,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, sa
 .stat-warn { color: #b45309; }
 .stat-danger { color: #dc2626; }
 .stat-unassigned { color: #9333ea; }
+.stat-now { color: #dc2626; }
+.stat-next { color: #d97706; }
 
 .controls { background: white; border-bottom: 1px solid #e2e8f0; padding: 10px 24px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .search { padding: 6px 11px; border: 1px solid #d1d5db; border-radius: 7px; font-size: 12px; width: 200px; outline: none; color: #1e293b; }
@@ -36,21 +50,33 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, sa
 .fbtn:hover { border-color: #6b7280; }
 .fbtn.on { background: #1e3a5f; color: white; border-color: #1e3a5f; }
 .fbtn.unassigned-btn.on { background: #9333ea; border-color: #9333ea; }
+.fsep { width: 1px; height: 20px; background: #e2e8f0; margin: 0 4px; }
+.tbtn.on-now { background: #dc2626 !important; border-color: #dc2626 !important; color: white !important; }
+.tbtn.on-next { background: #d97706 !important; border-color: #d97706 !important; color: white !important; }
+.tbtn.on-later { background: #64748b !important; border-color: #64748b !important; color: white !important; }
 .xpbtn { margin-left: auto; padding: 5px 11px; border-radius: 6px; font-size: 11px; border: 1px solid #d1d5db; background: white; color: #4b5563; cursor: pointer; white-space: nowrap; }
 .xpbtn:hover { border-color: #6b7280; }
 
 .legend { background: white; border-bottom: 1px solid #e2e8f0; padding: 6px 24px; display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
 .leg-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #64748b; }
 .leg-dot { width: 8px; height: 8px; border-radius: 50%; }
-.dot-ip { background: #3b82f6; }
-.dot-wc { background: #f59e0b; }
-.dot-wp { background: #8b5cf6; }
-.dot-ua { background: #dc2626; }
+.dot-now { background: #dc2626; }
+.dot-next { background: #d97706; }
+.dot-later { background: #94a3b8; }
+.dot-ua { background: #9333ea; }
+
+/* Tier chips */
+.tier { display: inline-flex; align-items: center; padding: 1px 7px; border-radius: 8px; font-size: 9.5px; font-weight: 700; letter-spacing: 0.3px; text-transform: uppercase; margin-right: 6px; vertical-align: middle; }
+.tier-now { background: #fef2f2; color: #dc2626; border: 1px solid #fca5a5; }
+.tier-next { background: #fff7ed; color: #c2410c; border: 1px solid #fed7aa; }
+.tier-later { background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; }
+.why-chip { display: inline-block; font-size: 9.5px; background: #f8fafc; color: #64748b; border: 1px solid #e2e8f0; border-radius: 5px; padding: 1px 5px; margin: 1px 2px 1px 0; white-space: nowrap; }
 
 /* Modal */
 .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
 .modal-overlay.open { display: flex; }
-.modal { background: white; border-radius: 14px; padding: 28px; width: 520px; max-width: calc(100vw - 32px); box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+.modal { background: white; border-radius: 14px; padding: 28px; width: 520px; max-width: calc(100vw - 32px); box-shadow: 0 20px 60px rgba(0,0,0,0.2); max-height: calc(100vh - 48px); overflow-y: auto; }
+.modal.wide { width: 680px; }
 .modal h2 { font-size: 16px; font-weight: 700; color: #1e3a5f; margin-bottom: 6px; }
 .modal .modal-sub { font-size: 12px; color: #64748b; margin-bottom: 20px; line-height: 1.5; }
 .modal label { display: block; font-size: 11px; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 5px; margin-top: 14px; }
@@ -64,6 +90,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, sa
 .modal-send { padding: 8px 18px; border-radius: 7px; border: none; background: #1e3a5f; color: white; font-size: 13px; font-weight: 600; cursor: pointer; }
 .modal-send:hover { background: #1e4976; }
 .modal-note { margin-top: 14px; padding: 10px 12px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 7px; font-size: 11px; color: #166534; line-height: 1.5; }
+#digestText { font-family: 'Consolas', 'Menlo', monospace; font-size: 11px; min-height: 320px; white-space: pre; }
 
 .projects { padding: 16px 24px; display: flex; flex-direction: column; gap: 7px; }
 .card { background: white; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
@@ -104,7 +131,7 @@ tr:hover td { background: #f8fafc; }
 .empty { padding: 48px; text-align: center; color: #94a3b8; font-size: 13px; }
 .footer { padding: 16px 24px; text-align: center; font-size: 11px; color: #94a3b8; border-top: 1px solid #e2e8f0; margin-top: 8px; background: white; }
 
-/* This Week / Urgent Panel */
+/* Priorities Panel */
 .urgent-panel { margin: 12px 24px 0; background: #fff7ed; border: 1.5px solid #fed7aa; border-radius: 12px; overflow: hidden; }
 .urgent-panel-hdr { padding: 11px 18px; display: flex; align-items: center; gap: 9px; border-bottom: 1px solid #fed7aa; }
 .urgent-panel-hdr h2 { font-size: 13px; font-weight: 700; color: #9a3412; }
@@ -116,18 +143,94 @@ tr:hover td { background: #f8fafc; }
 .urgent-table tr:hover td { background: #ffedd5; }
 .urgent-client { font-size: 11px; font-weight: 700; color: #9a3412; white-space: nowrap; }
 .urgent-task { font-size: 12px; font-weight: 500; color: #0f172a; }
-.urg-why { font-size: 10px; padding: 2px 7px; border-radius: 5px; font-weight: 600; white-space: nowrap; }
-.urg-why-od { background: #fef2f2; color: #dc2626; border: 1px solid #fca5a5; }
-.urg-why-soon { background: #fff7ed; color: #c2410c; border: 1px solid #fed7aa; }
-.urg-why-flag { background: #fdf4ff; color: #7e22ce; border: 1px solid #e9d5ff; }
-.stat-urgent { color: #ea580c; }
+.card.has-now:not(.has-unassigned) { border-left: 3px solid #ea580c; }
 .urg-badge { font-size: 10px; background: #fff7ed; color: #c2410c; padding: 2px 7px; border-radius: 9px; font-weight: 600; border: 1px solid #fed7aa; }
-.card.has-urgent:not(.has-unassigned) { border-left: 3px solid #ea580c; }
-.urg-inline { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #ea580c; margin-right: 5px; vertical-align: middle; flex-shrink: 0; }
+
+/* My Priorities strip (attorney filter active) */
+.myp { margin: 12px 24px 0; background: #eef6ff; border: 1.5px solid #bfdbfe; border-radius: 12px; padding: 12px 18px; }
+.myp h2 { font-size: 13px; font-weight: 700; color: #1e40af; margin-bottom: 8px; }
+.myp ol { margin: 0 0 0 18px; }
+.myp li { font-size: 12px; color: #0f172a; padding: 3px 0; line-height: 1.45; }
+.myp .myp-client { font-weight: 700; color: #1e3a5f; }
+.myp .myp-why { color: #64748b; font-size: 11px; }
+
+/* What Changed panel */
+.chg-panel { margin: 12px 24px 0; background: #f0fdf4; border: 1.5px solid #bbf7d0; border-radius: 12px; overflow: hidden; }
+.chg-hdr { padding: 11px 18px; display: flex; align-items: center; gap: 9px; border-bottom: 1px solid #bbf7d0; }
+.chg-hdr h2 { font-size: 13px; font-weight: 700; color: #166534; }
+.chg-sub { font-size: 11px; color: #15803d; }
+.chg-count { background: #16a34a; color: white; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 9px; margin-left: auto; }
+.chg-table { width: 100%; border-collapse: collapse; }
+.chg-table td { padding: 8px 14px; border-top: 1px solid #d1fae5; vertical-align: top; font-size: 12px; }
+.chg-table tr:hover td { background: #dcfce7; }
+.chg-tag { display: inline-block; font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; padding: 2px 7px; border-radius: 8px; white-space: nowrap; border: 1px solid; }
+.chg-new { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
+.chg-upd { background: #fffbeb; color: #92400e; border-color: #fde68a; }
+.chg-done { background: #f1f5f9; color: #475569; border-color: #e2e8f0; }
+.chg-od { background: #fef2f2; color: #dc2626; border-color: #fca5a5; }
+.chg-client { font-weight: 700; color: #166534; white-space: nowrap; }
+.chg-body { color: #0f172a; }
+.chg-delta { color: #64748b; font-size: 11px; }
+.chg-who { font-size: 11px; color: #64748b; white-space: nowrap; }
+#digestTo { font-size: 11px; color: #475569; margin-top: 10px; padding: 8px 10px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 7px; word-break: break-all; }
 
 /* Sub-group headers within a matter */
 .subgroup-row td { padding: 0; }
 .subgroup-hdr { background: #eef2f7; color: #1e3a5f; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; padding: 7px 14px !important; border-top: 1px solid #cbd5e1 !important; border-bottom: 1px solid #e2e8f0 !important; }
+
+/* ─── Complete status ───────────────────────────────────────────── */
+.b-cp { background: #f0fdf4; color: #15803d; border-color: #bbf7d0; }
+tr.row-complete .td-task, tr.row-complete .td-notes { text-decoration: line-through; color: #94a3b8; }
+tr.row-complete { background: #fafdfb; }
+.stat-done { color: #16a34a; }
+.done-badge { font-size: 10px; background: #f0fdf4; color: #15803d; padding: 2px 7px; border-radius: 9px; font-weight: 600; }
+
+/* ─── Inline editable fields ────────────────────────────────────── */
+.edit-sel { appearance: none; -webkit-appearance: none; -moz-appearance: none; font-family: inherit; cursor: pointer; outline: none; background-repeat: no-repeat; background-position: right 5px center; background-size: 8px 5px; background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%2394a3b8' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E"); }
+.edit-sel:focus, .edit-dl:focus { box-shadow: 0 0 0 2px rgba(59,130,246,0.4); }
+.sel-status { padding: 2px 18px 2px 8px; border-radius: 9px; font-size: 10px; font-weight: 600; border: 1px solid; line-height: 1.5; }
+.sel-status:hover { filter: brightness(0.96); }
+.sel-who { padding: 1px 17px 1px 5px; border-radius: 5px; font-size: 11px; font-weight: 500; border: 1px solid transparent; background-color: transparent; color: #374151; max-width: 135px; }
+.sel-who:hover { border-color: #cbd5e1; background-color: #f8fafc; }
+.sel-who.unassigned { color: #dc2626; font-weight: 700; }
+.edited { box-shadow: 0 0 0 2px rgba(37,99,235,0.45); }
+
+.edit-dl { font-family: inherit; font-size: 11px; font-weight: 600; padding: 2px 4px; border: 1px solid transparent; border-radius: 5px; background: transparent; color: inherit; cursor: pointer; outline: none; width: 116px; }
+.edit-dl:hover { border-color: #cbd5e1; background: #f8fafc; }
+.edit-dl.dl-od { color: #dc2626; } .edit-dl.dl-soon { color: #d97706; } .edit-dl.dl-ok { color: #64748b; }
+.dl-clear { font-size: 10px; color: #cbd5e1; cursor: pointer; padding: 0 3px; }
+.dl-clear:hover { color: #dc2626; }
+
+.notes-cell { cursor: text; }
+.notes-cell:hover { background: #f1f5f9; }
+.note-add { display: block; width: 100%; margin-bottom: 5px; font-family: inherit; font-size: 11px; line-height: 1.45; padding: 6px 8px; border: 1px solid #93c5fd; border-radius: 6px; resize: vertical; min-height: 52px; color: #0f172a; outline: none; }
+.note-add:focus { box-shadow: 0 0 0 2px rgba(59,130,246,0.3); }
+.note-btns { display: flex; gap: 6px; margin-bottom: 6px; }
+.note-btn { font-size: 10px; font-weight: 600; padding: 3px 9px; border-radius: 5px; border: 1px solid #93c5fd; background: #2563eb; color: white; cursor: pointer; }
+.note-btn.sec { background: white; color: #1d4ed8; }
+.note-btn:hover { filter: brightness(0.95); }
+.note-new { color: #1d4ed8; font-weight: 600; }
+.note-hint { color: #cbd5e1; font-size: 10px; font-style: italic; }
+
+/* ─── Pending (unsaved) changes bar ─────────────────────────────── */
+.pending-bar { margin: 12px 24px 0; background: #eff6ff; border: 1.5px solid #bfdbfe; border-radius: 12px; padding: 11px 16px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.pending-bar h3 { font-size: 13px; font-weight: 700; color: #1e40af; }
+.pending-sub { font-size: 11px; color: #1d4ed8; flex: 1; min-width: 170px; line-height: 1.45; }
+.pb-btn { padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 600; border: 1px solid #93c5fd; background: white; color: #1d4ed8; cursor: pointer; white-space: nowrap; }
+.pb-btn:hover { background: #dbeafe; }
+.pb-btn.primary { background: #2563eb; color: white; border-color: #2563eb; }
+.pb-btn.primary:hover { background: #1d4ed8; }
+.pb-list { width: 100%; margin-top: 2px; font-size: 11px; color: #1e3a8a; line-height: 1.55; border-top: 1px solid #bfdbfe; padding-top: 8px; }
+.pb-list div { padding: 1px 0; }
+.pb-list b { color: #1e3a5f; }
+
+/* ─── Modal send-result view ────────────────────────────────────── */
+#sendResult { display: none; }
+#sendResult.on { display: block; }
+.result-text { width: 100%; min-height: 150px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11px; line-height: 1.5; padding: 10px; border: 1px solid #d1d5db; border-radius: 7px; resize: vertical; color: #0f172a; background: #f8fafc; }
+.mail-link { display: inline-flex; align-items: center; gap: 6px; padding: 8px 18px; border-radius: 7px; background: #1e3a5f; color: white; font-size: 13px; font-weight: 600; text-decoration: none; }
+.mail-link:hover { background: #1e4976; }
+.copy-ok { color: #166534; font-weight: 700; }
 </style>
 </head>
 <body>
@@ -137,11 +240,14 @@ tr:hover td { background: #f8fafc; }
     <h1>Client Status Dashboard &mdash; Real Estate Practice Group</h1>
     <div class="sub" id="sub"></div>
   </div>
-  <button class="submit-btn" onclick="openModal()">&#9998; Submit an Update</button>
+  <div class="hdr-btns">
+    <button class="submit-btn digest-btn" onclick="openDigest()">&#128203; Daily Team Update</button>
+    <button class="submit-btn" onclick="openModal()">&#9998; Submit an Update</button>
+  </div>
 </div>
 
 <div class="readonly-banner">
-  &#128274; <strong>Read-only view.</strong> Use the &ldquo;Submit an Update&rdquo; button to report a status change. Questions? Contact <a href="mailto:cgrant@lyonsgaddis.com">Cameron Grant</a>.
+  &#9998; <strong>Status, Assigned, Deadline and Notes are editable.</strong> Click any of them to change it; set Status to <strong>Complete</strong> to clear a task off the board. Changes save in your browser only &mdash; use <strong>Email These Changes</strong> to send them to Cameron for the master file. Questions? Contact <a href="mailto:cgrant@lyonsgaddis.com">Cameron Grant</a>.
 </div>
 
 <div class="stats-bar" id="statsBar"></div>
@@ -149,17 +255,24 @@ tr:hover td { background: #f8fafc; }
 <div class="controls">
   <input type="text" class="search" id="srch" placeholder="Search clients or tasks...">
   <div class="filters" id="filters"></div>
-  <button class="xpbtn" id="xpbtn" onclick="toggleAll()">Expand All</button>
+  <span class="fsep"></span>
+  <div class="filters" id="tierFilters"></div>
+  <button class="xpbtn" id="sortbtn" onclick="toggleSort()">Sort: Priority</button>
+  <button class="xpbtn" id="donebtn" onclick="toggleDone()" style="margin-left:4px">Show Completed</button>
+  <button class="xpbtn" id="xpbtn" onclick="toggleAll()" style="margin-left:4px">Expand All</button>
 </div>
 
 <div class="legend">
-  <span class="leg-item"><span class="leg-dot dot-ip"></span>In Progress</span>
-  <span class="leg-item"><span class="leg-dot dot-wc"></span>Waiting: Client</span>
-  <span class="leg-item"><span class="leg-dot dot-wp"></span>Waiting: Counterparty</span>
+  <span class="leg-item"><span class="leg-dot dot-now"></span><strong>Now</strong>&nbsp;&mdash; act this week</span>
+  <span class="leg-item"><span class="leg-dot dot-next"></span><strong>Next</strong>&nbsp;&mdash; queue behind Now</span>
+  <span class="leg-item"><span class="leg-dot dot-later"></span><strong>Later</strong>&nbsp;&mdash; monitoring / waiting</span>
   <span class="leg-item"><span class="leg-dot dot-ua"></span>Unassigned (needs owner)</span>
-  <span class="leg-item"><span class="leg-dot" style="background:#ea580c"></span>This Week / Priority</span>
+  <span class="leg-item" style="color:#94a3b8">Rank = deadlines + flags + staleness + manual priority; filter by attorney for a personal list</span>
 </div>
 
+<div id="pendingBar"></div>
+<div id="changePanel"></div>
+<div id="mypStrip"></div>
 <div id="urgentPanel"></div>
 <div class="projects" id="proj"></div>
 
@@ -170,13 +283,14 @@ tr:hover td { background: #f8fafc; }
 <!-- Submit Update Modal -->
 <div class="modal-overlay" id="modalOverlay" onclick="closeModalIfBg(event)">
   <div class="modal">
-    <h2>Submit a Dashboard Update</h2>
-    <p class="modal-sub">Your update will be emailed to Cameron and applied to the dashboard automatically during the next morning sync. Use exact client names where possible.</p>
+    <h2 id="modalTitle">Submit a Dashboard Update</h2>
+    <p class="modal-sub" id="modalSub">Your update will be emailed to Cameron and applied to the dashboard automatically during the next morning sync. Use exact client names where possible.</p>
 
+    <div id="formView">
     <label for="m-client">Client / Matter</label>
     <input type="text" id="m-client" placeholder="e.g. Brookfield (BRP), Bestall Jack, Erie Four Corners">
 
-    <label for="m-task">Task (optional — leave blank if adding a new task)</label>
+    <label for="m-task">Task (optional &mdash; leave blank if adding a new task)</label>
     <input type="text" id="m-task" placeholder="e.g. LTWD Permit Issues Filing 7A">
 
     <label for="m-type">Update Type</label>
@@ -185,309 +299,1516 @@ tr:hover td { background: #f8fafc; }
       <option value="Task Complete">Task Complete / Closed</option>
       <option value="New Deadline">New Deadline</option>
       <option value="New Task">New Task</option>
+      <option value="Priority Change">Priority Change (High / Medium / Low)</option>
       <option value="Notes Update">Notes Update</option>
     </select>
 
     <label for="m-details">Details</label>
-    <textarea id="m-details" placeholder="Describe the update. Include any deadline dates, new task descriptions, or status notes."></textarea>
+    <textarea id="m-details" placeholder="Describe the update. Include any deadline dates, new task descriptions, priority level, or status notes."></textarea>
 
     <div class="modal-note">
-      &#9989; Your update will be sent to cgrant@lyonsgaddis.com and automatically applied during the next morning sync (weekdays, 8 AM). No follow-up needed.
+      &#9989; Your update goes to cgrant@lyonsgaddis.com and is applied during the next morning sync (weekdays, 8 AM). No follow-up needed.
     </div>
 
     <div class="modal-actions">
       <button class="modal-cancel" onclick="closeModal()">Cancel</button>
-      <button class="modal-send" onclick="sendUpdate()">Send Update</button>
+      <button class="modal-send" onclick="sendUpdate()">Prepare Update</button>
+    </div>
+    </div><!-- /formView -->
+
+    <div id="sendResult">
+      <label for="resultText">Ready to Send</label>
+      <textarea class="result-text" id="resultText" readonly></textarea>
+
+      <div class="modal-actions">
+        <button class="modal-cancel" onclick="copyResult()">Copy Text</button>
+        <a class="mail-link" id="mailLink" href="#">&#9993; Open in Email</a>
+      </div>
+
+      <div class="modal-note">
+        <span id="copyMsg"></span>If your email program does not open, click <strong>Copy Text</strong> and paste it into a new email to <strong>cgrant@lyonsgaddis.com</strong> with the subject line <span id="subjLine"></span>.
+      </div>
+
+      <div class="modal-actions">
+        <button class="modal-cancel" onclick="closeModal()">Done</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Team Digest Modal -->
+<div class="modal-overlay" id="digestOverlay" onclick="closeDigestIfBg(event)">
+  <div class="modal wide">
+    <h2>Daily Matter Update</h2>
+    <p class="modal-sub">What changed since the last sync, the firm-wide Act Now list, and each attorney's ranked queue. Regenerated live from the current dashboard data. &ldquo;Email the Team&rdquo; opens a pre-addressed draft in your mail client; review it, then send.</p>
+    <textarea id="digestText" readonly></textarea>
+    <div id="digestTo"></div>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeDigest()">Close</button>
+      <a class="modal-send" id="digestMailto" style="text-decoration:none" href="#">&#9993; Email the Team</a>
+      <button class="modal-send" onclick="copyDigest(this)">Copy to Clipboard</button>
     </div>
   </div>
 </div>
 
 <script>
-const LAST_UPDATED = "May 7, 2026";
-const ATTORNEYS = ["All","Cameron","James","Kennedy","Robyn","Unassigned"];
+const LAST_UPDATED = "August 14, 2026";
+const ATTORNEYS = ["All","Cameron","James","Kennedy","Robyn","Sean","Unassigned"];
+// Firm email addresses, sourced from the lyonsgaddis.com attorney profiles. Edit here if any change.
+const TEAM = {
+  "Cameron": "cgrant@lyonsgaddis.com",
+  "James":   "jgodbold@lyonsgaddis.com",
+  "Kennedy": "ksheetz@lyonsgaddis.com",
+  "Robyn":   "rsmith@lyonsgaddis.com",
+  "Sean":    "sstewart@lyonsgaddis.com"
+};
+const TIERS = [ {key:"All", label:"All"}, {key:"now", label:"Now"}, {key:"next", label:"Next"}, {key:"later", label:"Later"} ];
 const S = {
   in_progress:          { label:"In Progress",     cls:"b-ip" },
   waiting_client:       { label:"Waiting: Client", cls:"b-wc" },
-  waiting_counterparty: { label:"Waiting: Party",  cls:"b-wp" }
+  waiting_counterparty: { label:"Waiting: Party",  cls:"b-wp" },
+  complete:             { label:"Complete",        cls:"b-cp" }
 };
+function isDone(s){ return s==="complete"; }
 
 const DATA = [
-  { client:"Admin / Firm", tasks:[
-    { task:"Create contact list for all clients", assignee:"Unassigned", status:"in_progress", deadline:null, notes:"Previously assigned to Laura (resigned). Needs new owner." }
-  ]},
-  { client:"Arete Vistas", tasks:[
-    { task:"Cost Sharing Agreement", assignee:"Cameron", status:"waiting_counterparty", deadline:null, notes:"Emailed Josh on 4/3 for update." }
-  ]},
-  { client:"Bestall, Jack", tasks:[
-    { task:"Monitor LLC matter", assignee:"Cameron", status:"in_progress", deadline:null, notes:"Keith estimates $1,500 to file. Jack says go ahead." },
-    { task:"LLC financial information litigation", assignee:"Cameron", status:"in_progress", deadline:null, notes:"Statutory demand ignored by Russ. Complaint filed and copy sent to LLC counsel. Keith Edwards (litigation group) managing ongoing matter." },
-    { task:"Motion to Stay Discovery (federal, E.D. Pa.)", assignee:"Cameron", status:"in_progress", deadline:null, notes:"Draft motion prepared. Six items to verify before filing." }
-  ]},
-  { client:"Boulder Rifle Club", tasks:[
-    { task:"Draft memo re: historical land use", assignee:"Kennedy", status:"in_progress", deadline:null, notes:"KDS to finalize memo and send to CAG for final review." }
-  ]},
-  { client:"Brookfield (BRP)", tasks:[
-    { task:"Shell Right-of-Way Ditch Issue", assignee:"Cameron", status:"in_progress", deadline:null, notes:"" },
-    { task:"Schell Property / No. 3 Box Culvert Prescriptive Easement Analysis", assignee:"Cameron", status:"in_progress", deadline:null, notes:"As-builts analysis initiated 5/6. Jeffrey J. Kahn involved. Birch location. Prescriptive easement evaluation in progress." },
-    { task:"LTWD Permit Issues Filing 7A", assignee:"Cameron", status:"in_progress", deadline:null, notes:"" },
-    { task:"Review O&G relinquishments", assignee:"Robyn", status:"in_progress", deadline:null, notes:"Cameron to review. Done, sent overview to CAG for review." },
-    { task:"Sarah Wagner Easement Acquisition", assignee:"Cameron", status:"in_progress", deadline:null, notes:"" },
-    { task:"Draft correspondence to Little Thompson Water District re fee calculation issues", assignee:"Cameron", status:"in_progress", deadline:null, notes:"On hold." },
-    { task:"LTWD Filing 7E matter (formerly Barefoot Lakes)", assignee:"Cameron", status:"in_progress", deadline:null, notes:"LTWD documents reviewed. Meeting prep completed. Bittersweet Farms case law on file." }
-  ]},
-  { client:"Carter, Larry", tasks:[
-    { task:"Boulder County Easement", assignee:"James", status:"waiting_counterparty", deadline:null, notes:"w/f parties to complete settlement. Past due invoices noted." }
-  ]},
-  { client:"Christie, Megan & Richard", tasks:[
-    { task:"Iron Horse HOA Garage Door Dispute", assignee:"James", status:"in_progress", deadline:null, notes:"w/f signatures on Settlement. Pending O&E search for liens." }
-  ]},
-  { client:"Clover Creek Investments", tasks:[
-    { task:"Review and Revise Annexation Agreement", assignee:"Robyn", status:"in_progress", deadline:null, notes:"Comments sent to CAG 3/9 for review." },
-    { task:"Wait for city response to proposal sent April 6th", assignee:"Cameron", status:"waiting_counterparty", deadline:null, notes:"Follow-up sent to Molly on April 20th." }
-  ]},
-  { client:"Golden (Diamond G, Golden Farm, Fredstrom, Golden/Nelson)", tasks:[
-    // ─── Diamond G ──────────────────────────────────────────────
-    { subgroup:"Diamond G", task:"255 EKP Operating Agreement: confirm special allocation language", assignee:"Cameron", status:"in_progress", deadline:null, notes:"NEW per 4/22 call. Significant 2025 loss anticipated; confirm OA permits special allocation of basis. CG to study OA section and identify any updates needed." },
-    { subgroup:"Diamond G", task:"Holcim/Amrize Fill Agreement", assignee:"Cameron", status:"waiting_counterparty", deadline:null, notes:"Updated 4/22: Latest revision sent to Amrize ~4/12. Our draft scopes work to two pits; theirs is overly broad. Amrize plowing ahead with fill/compaction; Reggie estimates ~1 month to completion." },
-    { subgroup:"Diamond G", task:"Develop and circulate combined Amrize resolution strategy", assignee:"Cameron", status:"in_progress", deadline:null, notes:"NEW per 4/22 call. Consolidated strategy memo covering fill agreement, $250K escrow release, Hwy 119 abandonment, Fredstrom default, royalty pricing. Circulate to Reggie/Drew/group for review." },
-    { subgroup:"Diamond G", task:"Push Amrize for $250K escrow release", assignee:"Cameron", status:"in_progress", deadline:null, notes:"NEW per 4/22 call. Escrow funded ~4 yrs ago to protect against neighbor claims (purpose now moot). Release requires termination of underlying agreement that requires city council action. Use FirstBank renewal/move pressure as impetus. No scenario where Amrize is entitled to the funds." },
-    { subgroup:"Diamond G", task:"Demand Amrize royalty pricing data and methodology", assignee:"Cameron", status:"in_progress", deadline:null, notes:"NEW per 4/22 call. Amrize has never provided pricing data. Lease methodology hard-coded but they owe contractual demonstration of calculation. Add to combined strategy memo." },
-    { subgroup:"Diamond G", task:"Investigate DRMS bond release process and landowner objection rights", assignee:"Cameron", status:"in_progress", deadline:null, notes:"NEW per 4/22 call. Determine if landowner has standing to file objection with DRMS when operator seeks reclamation bond release. Use as pressure point on Amrize." },
-    { subgroup:"Diamond G", task:"Evaluate proposed reclamation plan modification (additional fill dirt)", assignee:"Cameron", status:"in_progress", deadline:null, notes:"NEW per 4/22 call. Reggie wants to bring in dirt for later use while Amrize is still on site. Lower priority; not a deal-killer if not done." },
-    { subgroup:"Diamond G", task:"Track Amrize-related billing for inter-entity reallocation", assignee:"Cameron", status:"in_progress", deadline:null, notes:"NEW per 4/22 call. All Amrize bills currently going to Diamond G but contained in single statement. Coordinate with Reggie on potential reallocation between Diamond G, Golden Farm, and concrete entities." },
-    { subgroup:"Diamond G", task:"Final close-out of Amrize permit (Irwin)", assignee:"Cameron", status:"in_progress", deadline:null, notes:"On list but not active. Will coordinate with bond release strategy and DRMS objection planning per 4/22 strategy memo." },
-    { subgroup:"Diamond G", task:"Valvoline Transaction", assignee:"Cameron", status:"waiting_client", deadline:null, notes:"Draft sent to client on 4/2." },
-
-    // ─── House on Airport (Cronk Sale) ──────────────────────────
-    { subgroup:"House on Airport (Cronk Sale)", task:"Review title commitment from title company", assignee:"Cameron", status:"in_progress", deadline:null, notes:"NEW per 4/22 call. Title commitment circulated 4/21. CG to review for issues." },
-    { subgroup:"House on Airport (Cronk Sale)", task:"Finalize legal description for conveyance", assignee:"Robyn", status:"in_progress", deadline:null, notes:"NEW per 4/22 call. Robyn working on it; legal was missing items." },
-    { subgroup:"House on Airport (Cronk Sale)", task:"Re-review replacement property and reallocation provisions", assignee:"Cameron", status:"in_progress", deadline:null, notes:"NEW per 4/22 call. CG drafted; needs re-read to confirm structure of carve-out from Track 1 to Track 2 (condominiumization concept) and reallocation mechanics." },
-    { subgroup:"House on Airport (Cronk Sale)", task:"Determine whether lot line adjustment with city is required", assignee:"Cameron", status:"in_progress", deadline:null, notes:"NEW per 4/22 call. Confirm whether condominiumization or reallocation triggers a lot line adjustment with the City." },
-    { subgroup:"House on Airport (Cronk Sale)", task:"Closing: house on airport (Cronk)", assignee:"Cameron", status:"in_progress", deadline:"2026-05-08", urgent:true, notes:"Target closing date 5/8. All party signatures complete. Drive to closing with title commitment review, finalized legal, replacement property docs, and deed of trust." },
-
-    // ─── Golden Farm ─────────────────────────────────────────────
-    { subgroup:"Golden Farm", task:"Reallocate extraordinary reclamation costs from concrete to farm side", assignee:"Cameron", status:"in_progress", deadline:null, notes:"NEW per 4/22 call. Push slurry walls, compaction, and Amrize-driven costs to Golden Farm as cost of delivering parcel to concrete. Coordinate with Reggie on accounting/tax treatment." },
-    { subgroup:"Golden Farm", task:"Draft modification to Golden Farm note (extend term, evaluate interest rate)", assignee:"Cameron", status:"in_progress", deadline:null, notes:"NEW per 4/22 call. Cannot modify principal but can extend term (~5 yrs additional runway) and adjust interest rate without tax consequence. Coordinate with Reggie." },
-    { subgroup:"Golden Farm", task:"Family alignment discussion re note restructure", assignee:"Cameron", status:"in_progress", deadline:null, notes:"NEW per 4/22 call. Restructure requires family alignment before execution." },
-
-    // ─── Fredstrom (Freedom property) ───────────────────────────
-    { subgroup:"Fredstrom", task:"Pursue Amrize payment for defaulted mineral purchase", assignee:"Cameron", status:"in_progress", deadline:null, notes:"NEW per 4/22 call. Structured as sale of minerals in place (not lease/royalty). Title analysis indicates Amrize holds title via recorded deed. Position: you bought, you owe. Resolution would unlock county/accounting/lot line issues." },
-    { subgroup:"Fredstrom", task:"Confirm whether Amrize recorded formal relinquishment of Fredstrom minerals", assignee:"Cameron", status:"in_progress", deadline:null, notes:"NEW per 4/22 call. Reggie thought Amrize relinquished, but may have only been Milliken. Pull recorded title to confirm." },
-    { subgroup:"Fredstrom", task:"Fredstrom Minerals (AmRise Claim)", assignee:"Cameron", status:"in_progress", deadline:null, notes:"CG to follow up with Barb re lot line adjustment." },
-    { subgroup:"Fredstrom", task:"Address County Title Objections (BoCo)", assignee:"Cameron", status:"in_progress", deadline:null, notes:"" },
-    { subgroup:"Fredstrom", task:"Contact Boulder County re Fredstrom closing", assignee:"Cameron", status:"in_progress", deadline:null, notes:"" },
-    { subgroup:"Fredstrom", task:"Contact Boulder County re lot line adjustment", assignee:"Cameron", status:"in_progress", deadline:null, notes:"" },
-
-    // ─── Golden/Nelson ───────────────────────────────────────────
-    { subgroup:"Golden/Nelson", task:"Member Resolution (BoCo)", assignee:"Kennedy", status:"in_progress", deadline:null, notes:"Resolution drafted 11/9. CAG to review." },
-    { subgroup:"Golden/Nelson", task:"Evaluate lease re Amrize abandoning minerals N of Hwy 119", assignee:"Cameron", status:"in_progress", deadline:null, notes:"Reliance theory: D-G invested in intersection improvements based on the mining deal, so Amrize cannot walk away without paying anticipated royalties. Amrize position: business decision based on reserves vs. extraction cost. Tie into combined Amrize strategy." },
-    { subgroup:"Golden/Nelson", task:"Evaluate whether I can represent the Nelsons", assignee:"Cameron", status:"in_progress", deadline:null, notes:"" },
-    { subgroup:"Golden/Nelson", task:"Revise equestrian access lease with neighbor", assignee:"Cameron", status:"in_progress", deadline:null, notes:"" },
-    { subgroup:"Golden/Nelson", task:"Reserve conference room for Golden and Nelson (first week of June)", assignee:"Cameron", status:"in_progress", deadline:"2026-06-01", notes:"" }
-  ]},
-  { client:"Doug & JoAnna Grant", tasks:[
-    { task:"Record Affidavit re: Reimbursement", assignee:"Unassigned", status:"in_progress", deadline:null, notes:"Previously assigned to Laura (resigned). Notice to Lupton Land sent 12/24/25." },
-    { task:"2130 Mountain View (inspection resolution deadline)", assignee:"Robyn", status:"in_progress", deadline:"2026-04-24", urgent:true, notes:"Proposed resolution sent to buyer's broker 4/21. Buyer response received 4/22. Deadline 4/24 passed. Inspection objection response sent by Cameron 4/27. Awaiting buyer reply." },
-    { task:"Debt Restructure Plan", assignee:"Cameron", status:"in_progress", deadline:null, notes:"" },
-    { task:"2130 Mountain View Sale", assignee:"Cameron", status:"in_progress", deadline:null, notes:"No title objections. Next deadline TBD." },
-  ]},
-  { client:"Doug & Jody Robinson", tasks:[
-    { task:"LLC Formation and Contribution of Rental Property", assignee:"Robyn", status:"waiting_client", deadline:null, notes:"Waiting for client, never responded. Follow up or no?" }
-  ]},
-  { client:"Elliott Family Farm", isNew:true, tasks:[
-    { task:"LOI Review and Negotiation", assignee:"Cameron", status:"in_progress", deadline:null, notes:"LOI received 4/3. Water proposal v7 and LOI review memos on file." },
-    { task:"Connect with seller's broker regarding water values", assignee:"Cameron", status:"in_progress", deadline:null, notes:"" }
-  ]},
-  { client:"Erie Commons Commercial", tasks:[
-    { task:"Draft proposal for cost reimbursement to Town of Erie", assignee:"Cameron", status:"in_progress", deadline:null, notes:"" }
-  ]},
-  { client:"Erie Four Corners", tasks:[
-    { task:"Waldner Litigation (DJR / Pounds v. Waldner)", assignee:"Cameron", status:"in_progress", deadline:null, notes:"Mediation was May 5. Cameron was in Houston (MD Anderson) and could not attend. Bond analysis complete: E4C holds $1,875,000 subordinate revenue bond (Four Corners BID, 7% annual, matures 2052) proposed as settlement instrument to Dave Waldner. Settlement structure: Dave takes bond; Walt keeps $700K cash and full property sale waterfall. Dave's litigation ceiling $300K–$1.1M after Tebo offset and DJR waterfall. Need: confirm mediation outcome with Jeff Rose/Walt; CJ to provide BID senior bond retirement schedule for present-value analysis. ~$5M additional debt capacity in BID/Metro District may further subordinate the bond if issued as senior debt." }
-  ]},
-  { client:"Frye, Chris", tasks:[
-    { task:"Fox Hill Loan Matters", assignee:"James", status:"waiting_client", deadline:null, notes:"w/f client. Loan docs still pending." },
-    { task:"McNeil Res Access Agreements", assignee:"Robyn", status:"waiting_counterparty", deadline:null, notes:"Revised docs sent to P. Groom on 3/17." }
-  ]},
-  { client:"Fry, Jennifer", tasks:[
-    { task:"LLC Tax Evaluation", assignee:"Cameron", status:"waiting_counterparty", deadline:null, notes:"Sent to CPA after April 15th." },
-    { task:"Terminate relationship with client", assignee:"Cameron", status:"in_progress", deadline:null, notes:"" }
-  ]},
-  { client:"Grant Brothers", tasks:[
-    { task:"Mineral Conveyance and Dissolution", assignee:"Cameron", status:"waiting_client", deadline:null, notes:"w/f Doug approval of dissolution plan." },
-    { task:"Mineral Conveyance (finalize deeds)", assignee:"James", status:"in_progress", deadline:null, notes:"Finalize deeds. CG to check with Doug Grant." }
-  ]},
-  { client:"Grant, Aaron", tasks:[
-    { task:"6477 Frederick Way PSA - Calendar pending deadlines", assignee:"Cameron", status:"in_progress", deadline:null, notes:"PSA signed by Aaron. Review contract and calendar all contingency/deadline dates." },
-    { task:"800 S Franklin Demand Letter", assignee:"Cameron", status:"in_progress", deadline:null, notes:"Lit scheduling mediation (ECP/JSR)." },
-    { task:"Citywide Bank Litigation", assignee:"Cameron", status:"in_progress", deadline:null, notes:"Respond to Complaint." }
-  ]},
-  { client:"GCGP", isNew:true, tasks:[
-    { task:"Closing Docs", assignee:"James", status:"in_progress", deadline:"2026-04-30", urgent:true, notes:"Closing TOMORROW 4/30. CVP/Pronghorn DB vacant land transaction. Active commitment email chain 4/29 (Godbold, Ryan Ramey/Cole Valley Partners, Derek Greenhouse). Recording authorized per Godbold 4/29." }
-  ]},
-  { client:"Lofquist, Randy", tasks:[
-    { task:"Easement Evaluation at Sugar Mill Site", assignee:"James", status:"in_progress", deadline:null, notes:"" }
-  ]},
-  { client:"Longmont United Hospital Foundation", tasks:[
-    { task:"Oil and Gas Lease", assignee:"James", status:"waiting_counterparty", deadline:null, notes:"Working on addendum to Lease with operator. Waiting on response from operator." }
-  ]},
-  { client:"McCarthy, Tim", tasks:[
-    { task:"Operating Agreement Amendments", assignee:"James", status:"in_progress", deadline:null, notes:"" },
-    { task:"Potential Admission of New Partner", assignee:"James", status:"in_progress", deadline:null, notes:"Discussed with Tim. Sending draft this week." }
-  ]},
-  { client:"McGuire, Brendan", tasks:[
-    { task:"Commercial Property Purchase", assignee:"James", status:"in_progress", deadline:null, notes:"Redlined LOI terms sent 4/14." }
-  ]},
-  { client:"Moradi", tasks:[
-    { task:"Assemble cost estimates for building demolition", assignee:"Unassigned", status:"in_progress", deadline:null, notes:"Previously assigned to Laura (resigned). w/f estimates. CAG to get Pollard dealership demo contact." },
-    { task:"Obtain Mineral Appraisal/Valuation", assignee:"James", status:"in_progress", deadline:null, notes:"" },
-    { task:"White Rock ditch water share evaluation strategy", assignee:"Robyn", status:"in_progress", deadline:null, notes:"RLS draft email to CAG 4/9. Need approval to respond to client and approach Julie Pasillas." },
-    { task:"Lexington builder outreach strategy (Civitas)", assignee:"Cameron", status:"in_progress", deadline:null, notes:"Builder targets: Sun Communities, Brookfield B2R, Boulder Creek, Bridgewater, Toll Brothers, Landmark, Oakwood, LGI, Richmond American, Century Communities. 81-acre site." },
-    { task:"Contact Rich Coolidge (Civitas) re SUA and mineral rights", assignee:"Cameron", status:"in_progress", deadline:null, notes:"Via A.J. Krieger referral. Giving up mineral rights for easement release: non-starter." },
-    { task:"Review SUA temporary drilling footprint language with James", assignee:"Cameron", status:"in_progress", deadline:null, notes:"Assess whether COGCC reforms make new well permits legally infeasible on site." },
-    { task:"Follow up with Max on site design layout with easement in place", assignee:"Cameron", status:"in_progress", deadline:null, notes:"Alex asked Max to produce layout showing Staenberg parcel with easement." },
-    { task:"Follow up with Chad Rodriguez (TruMark) re residential proposal", assignee:"Cameron", status:"in_progress", deadline:"2026-04-21", notes:"Expected proposal by 4/21. Follow up if not received." },
-    { task:"Get Redland proposal scope for residential land infrastructure", assignee:"Cameron", status:"in_progress", deadline:null, notes:"Need picture of infrastructure requirements for residential land beyond the commercial piece." },
-    { task:"Forward Robyn water write-up to Alex and Sam", assignee:"Cameron", status:"in_progress", deadline:null, notes:"" },
-    { task:"Oxy Sable Glen: confirm election packet and lease status", assignee:"James", status:"in_progress", deadline:null, notes:"Notices may have gone to old address. Property held by Pan Trinity LLC. Issue: 12.5% vs. 20% royalty." }
-  ]},
-  { client:"Nash, Patty", tasks:[
-    { task:"Assist with Lease Matter", assignee:"Robyn", status:"waiting_client", deadline:null, notes:"Draft term sheet sent to CAG/SMS for review 4/16. Waiting on feedback, then send to client." }
-  ]},
-  { client:"Nelson Family", tasks:[
-    { task:"Form entity to hold Nelson/Redmond properties", assignee:"Robyn", status:"waiting_client", deadline:null, notes:"Update on approval from family?" }
-  ]},
-  { client:"Parkway West", isNew:true, tasks:[
-    { task:"Respond to purchase offer", assignee:"Cameron", status:"in_progress", deadline:null, notes:"" },
-    { task:"Discuss capital call with David", assignee:"Cameron", status:"in_progress", deadline:null, notes:"" }
-  ]},
-  { client:"Postle", tasks:[
-    { task:"Davis Development Termination", assignee:"James", status:"in_progress", deadline:null, notes:"Open records request to Thornton. Check if submitted." }
-  ]},
-  { client:"Pounds, Walt", tasks:[
-    { task:"Riverset LLC Demand", assignee:"Kennedy", status:"in_progress", deadline:null, notes:"Prior demand confirmed sufficient. Consider moving straight to complaint." }
-  ]},
-  { client:"Purvis", isNew:true, tasks:[
-    { task:"PPLLC Strategy - Mediation Path", assignee:"Cameron", status:"in_progress", deadline:null, notes:"Mediation is now recommended path. Keith Edwards as co-counsel. Strategy v8 prepared April 2026. Client meeting and presentation completed." },
-    { task:"Schedule in-office meeting with Ginger and Pat", assignee:"Cameron", status:"in_progress", deadline:null, notes:"Ginger available any day next week except May 1. Ginger on vacation May 26 - June 9." },
-    { task:"Prepare mediation statement for Judge Caschette", assignee:"Cameron", status:"in_progress", deadline:null, notes:"" },
-    { task:"Confirm mediation date with Judge Caschette's office", assignee:"Cameron", status:"in_progress", deadline:null, notes:"" },
-    { task:"Develop trust restructuring concept for membership interest succession", assignee:"Cameron", status:"in_progress", deadline:null, notes:"" },
-    { task:"Work through fiduciary duty questions on restructuring", assignee:"Cameron", status:"in_progress", deadline:null, notes:"" },
-    { task:"Coordinate schedules with Keith Edwards (co-counsel)", assignee:"Cameron", status:"in_progress", deadline:null, notes:"" }
-  ]},
-  { client:"Rademacher, Eric", tasks:[
-    { task:"LLC Buyout", assignee:"Kennedy", status:"in_progress", deadline:null, notes:"Eric wants to sell membership interest. Need valuation." }
-  ]},
-  { client:"RRRS, LLP", tasks:[
-    { task:"Confirm execution of contract to buy and sell", assignee:"Kennedy", status:"waiting_counterparty", deadline:null, notes:"Buyers and brokers non-responsive. Rick looking to list property." }
-  ]},
-  { client:"Sun / River Run", isNew:true, tasks:[
-    { task:"Punchlist resolution with Grand County (Granby)", assignee:"Cameron", status:"in_progress", deadline:null, notes:"Punchlist remaining items from 2023. E. Prosser email to Granby on file. Town of Granby meeting scheduled April 30 at 11:00 AM with full Granby team and Sun team." },
-    { task:"Prepare for Town of Granby meeting (April 30, 11:00 AM)", assignee:"Cameron", status:"in_progress", deadline:"2026-04-30", urgent:true, notes:"Significant preparation required. Begin this week. Full Granby team and Sun team attending." }
-  ]},
-  { client:"Sun / Smith Creek", isNew:true, tasks:[
-    { task:"Sewer acceptance / Pre-Inclusion Agreement disputes", assignee:"Cameron", status:"in_progress", deadline:null, notes:"Open issues memo v2 complete. Bonding dispute: $128K. ESCO corporate guarantee issue." }
-  ]},
-  { client:"Sylvandale", isNew:true, tasks:[
-    { task:"A&R Partnership Agreement and CBT Water shares sale", assignee:"Cameron", status:"in_progress", deadline:null, notes:"A&R Partnership Agreement (unsigned) and CBT water share sale agreement (signed) on file." },
-    { task:"Withdraw from representation", assignee:"Cameron", status:"in_progress", deadline:null, notes:"" }
-  ]},
-  { client:"T-Bullets", isNew:true, tasks:[
-    { task:"Follow-up with Palmer City regarding Notice of Violation and Resolution Plan", assignee:"Cameron", status:"in_progress", deadline:null, notes:"" }
-  ]},
-  { client:"Teater, Shane", tasks:[
-    { task:"New entity formation / loan workout items", assignee:"James", status:"in_progress", deadline:null, notes:"Main project complete. Loan workout items ongoing." }
-  ]},
-  { client:"Tebo, Stephen", tasks:[
-    { task:"5555 Dahlia, notice of violation (Commerce City)", assignee:"Robyn", status:"in_progress", deadline:null, notes:"Protest mailed 4/14-4/15. Voicemails to code enforcement and D. Lugo on 4/14." },
-    { task:"Respond to Commerce City denial of protest", assignee:"Cameron", status:"waiting_counterparty", deadline:null, notes:"Response submitted 4/21. Waiting on Commerce City." }
-  ]},
-  { client:"Temple Grandin School", tasks:[
-    { task:"Real Estate Purchase", assignee:"James", status:"in_progress", deadline:null, notes:"In due diligence. w/f Survey. Connect with Water Team." }
-  ]},
-  { client:"Tract", isNew:true, tasks:[
-    { task:"Pueblo Annexation and Zoning (Morley Property)", assignee:"Cameron", status:"in_progress", deadline:"2026-05-15", notes:"Engagement letter signed 4/9/26. Field guide v3 prepared. 12-pg Annexation Questions memo drafted 4/27 in response to Erin Fosdick inquiry, target 5/15/26 internal delivery to Robyn. Threshold verification: parcel-by-parcel distance pre/post Morley annexation needed before advising City track feasible. Memo includes hedged client-facing reply for Robyn to send post-verification. Cite-check current PMC Title XVII section numbering before client correspondence." }
-  ]},
-  { client:"Tzap, Steve", tasks:[
-    { task:"Draft Petition for Annexation - Boulder Ranch Homes (8600 Baseline Rd.)", assignee:"Robyn", status:"waiting_counterparty", deadline:null, notes:"Draft petition completed and sent to City 4/21. Waiting for City response." },
-    { task:"NC exemption argument and factual record (Section 26-2-2(d)(3)(C))", assignee:"Cameron", status:"in_progress", deadline:null, notes:"King Soopers proximity or site constraint infeasibility arguments." },
-    { task:"Raw water dedication confirmation (Resolution 2021-56)", assignee:"Cameron", status:"in_progress", deadline:null, notes:"Confirm with Lafayette Public Works." },
-    { task:"Lafayette LUC adoption - June 2026 second reading", assignee:"Cameron", status:"in_progress", deadline:"2026-06-01", urgent:true, notes:"Window to negotiate code modifications extremely narrow. Decide strategy before June." }
-  ]},
-  { client:"Winger, Greg", tasks:[
-    { task:"Mineral Conveyance (Nebraska)", assignee:"James", status:"in_progress", deadline:null, notes:"Deeds drafted. Review and send to Greg." }
-  ]},
+  {
+    "client": "Bestall, Jack",
+    "tasks": [
+    {
+      "task": "Monitor LLC matter",
+      "assignee": "Cameron",
+      "status": "in_progress",
+      "deadline": null,
+      "updated": "2026-08-11",
+      "notes": "FLAG (8/11 sync, inbox sweep): two emails from Jack Bestall Mon 8/10 - \"GOOD NEWS ON POTENTIAL TEAM ADD\" (1:22 PM, re a conference with Desiree Galloway) and a forward at 1:42 PM stating \"1. Nyland Meeting. We will not be holding the neighborhood meeting with Nyland...\". The Nyland thread was also flagged unreviewed on 7/21. Bodies not readable during this sync - review and decide whether Nyland needs its own task. Keith estimates $1,500 to file. Jack says go ahead."
+    },
+    {
+      "task": "LLC financial information litigation",
+      "assignee": "Cameron",
+      "status": "in_progress",
+      "deadline": null,
+      "notes": "Statutory demand ignored by Russ. Complaint filed and copy sent to LLC counsel. Keith Edwards (litigation group) managing ongoing matter."
+    }
+    ]
+  },
+  {
+    "client": "Brookfield (BRP)",
+    "tasks": [
+    {
+      "task": "Schell Property / No. 3 Box Culvert Prescriptive Easement Analysis",
+      "assignee": "Cameron",
+      "status": "in_progress",
+      "deadline": null,
+      "notes": "As-builts analysis initiated 5/6. Jeffrey J. Kahn involved. Birch location. Prescriptive easement evaluation in progress."
+    },
+    {
+      "task": "LTWD Permit Issues Filing 7A",
+      "assignee": "Cameron",
+      "status": "complete",
+      "deadline": null,
+      "updated": "2026-08-12",
+      "notes": ""
+    },
+    {
+      "task": "Review O&G relinquishments",
+      "assignee": "Robyn",
+      "status": "complete",
+      "deadline": null,
+      "updated": "2026-08-12",
+      "notes": "Cameron to review. Done, sent overview to CAG for review."
+    },
+    {
+      "task": "Sarah Wagner Easement Acquisition",
+      "assignee": "Cameron",
+      "status": "in_progress",
+      "deadline": null,
+      "notes": ""
+    },
+    {
+      "task": "Draft correspondence to Little Thompson Water District re fee calculation issues",
+      "assignee": "Cameron",
+      "status": "complete",
+      "deadline": null,
+      "updated": "2026-08-12",
+      "notes": "On hold."
+    },
+    {
+      "task": "LTWD Filing 7E matter (formerly Barefoot Lakes)",
+      "assignee": "Cameron",
+      "status": "complete",
+      "deadline": null,
+      "updated": "2026-08-12",
+      "notes": "LTWD documents reviewed. Meeting prep completed. Bittersweet Farms case law on file."
+    },
+    {
+      "task": "Firestone mineral owner certification - Tract J (Filing 5)",
+      "assignee": "Cameron",
+      "status": "complete",
+      "deadline": null,
+      "updated": "2026-08-12",
+      "notes": "Draft certification prepared citing C.R.S. § 24-65.5-103(1.5): Tract J lies entirely within Filing 5, which was already covered by the June 8, 2020 mineral-owner notice certified to the Town, so no new mailing is required. Firestone has no prescribed certification form (confirmed against FDC/Title 16); note added to check with Town Planning on whether staff wants their own form. Open blanks: application type, hearing date/body, plat recording info, exact 2020 filing date."
+    }
+    ]
+  },
+  {
+    "client": "Clover Creek Investments",
+    "tasks": [
+    {
+      "task": "Review and Revise Annexation Agreement",
+      "assignee": "Robyn",
+      "status": "in_progress",
+      "deadline": null,
+      "notes": "Comments sent to CAG 3/9 for review."
+    },
+    {
+      "task": "Wait for city response to proposal sent April 6th",
+      "assignee": "Cameron",
+      "status": "in_progress",
+      "deadline": null,
+      "updated": "2026-08-11",
+      "priority": "medium",
+      "notes": "8/11 team call: Cameron to follow up with Molly O'Donnell directly, since he sent the last email. That email essentially asked whether the city still wants to do this deal (their tune seemed to be changing) and has gone unanswered. Robyn also flagged a possible meeting with the city that may or may not have been scheduled - confirm status when following up. Follow-up sent to Molly on April 20th."
+    },
+    {
+      "task": "Negotiate water rights terms - reservoir share purchase",
+      "assignee": "Robyn",
+      "status": "in_progress",
+      "deadline": null,
+      "updated": "2026-08-11",
+      "notes": "Conflict waivers now complete, so the water rights negotiation can start. 8/11 team call: Robyn to email Jeff (Kahn) stating the client is ready to buy the shares at market rate and asking what he considers market rate, then pass the number to the client. Also ask Jeff for the last two or three comparable sales he is aware of so the client can see the figure is in the ballpark. Cameron recalled roughly $7,500/share historically; Robyn believes current pricing is closer to $6,000. FLAG: transcript audio is unclear on the ditch/reservoir company name - rendered variously as \"McNeil Reservoir\" and \"Macintosh\" - confirm the correct entity before the email goes out. FLAG: also confirm whether pricing can be verified through the city."
+    }
+    ]
+  },
+  {
+    "client": "Doug & Jody Robinson",
+    "tasks": [
+    {
+      "task": "LLC Formation and Contribution of Rental Property",
+      "assignee": "Robyn",
+      "status": "complete",
+      "deadline": null,
+      "updated": "2026-08-12",
+      "notes": "Waiting for client, never responded. Follow up or no?"
+    }
+    ]
+  },
+  {
+    "client": "Elliott Family Farm",
+    "isNew": true,
+    "tasks": [
+    {
+      "task": "LOI Review and Negotiation",
+      "assignee": "Cameron",
+      "status": "complete",
+      "deadline": null,
+      "updated": "2026-08-12",
+      "notes": "LOI received 4/3. Water proposal v7 and LOI review memos on file."
+    },
+    {
+      "task": "Connect with seller's broker regarding water values",
+      "assignee": "Cameron",
+      "status": "in_progress",
+      "deadline": null,
+      "notes": ""
+    }
+    ]
+  },
+  {
+    "client": "Erie Commons Commercial",
+    "tasks": [
+    {
+      "task": "Draft proposal for cost reimbursement to Town of Erie",
+      "assignee": "Cameron",
+      "status": "in_progress",
+      "deadline": null,
+      "notes": ""
+    },
+    {
+      "task": "Respond to Ryan's emails and send status update to the group",
+      "assignee": "Cameron",
+      "status": "in_progress",
+      "deadline": null,
+      "updated": "2026-08-11",
+      "notes": "8/11 team call: Cameron has been receiving repeated emails from Ryan and planned to set aside time that afternoon to work through them and send everyone an update. He characterised the engagement as a good project with no urgency, suited to meaty blocks of work, and estimated it runs a couple of months. FLAG: the transcript renders the client as \"Coal Creek Commercial,\" which does not match any matter on the board - this has been filed under Erie Commons Commercial as the closest fit, but confirm whether Ryan belongs to Erie Commons or to a separate Coal Creek matter that is not yet tracked. FLAG: Ryan's surname not stated."
+    }
+    ]
+  },
+  {
+    "client": "Erie Four Corners",
+    "tasks": [
+    {
+      "task": "Waldner Litigation (DJR / Pounds v. Waldner)",
+      "assignee": "Cameron",
+      "status": "in_progress",
+      "deadline": null,
+      "notes": "Mediation was May 5. Cameron was in Houston (MD Anderson) and could not attend. Bond analysis complete: E4C holds $1,875,000 subordinate revenue bond (Four Corners BID, 7% annual, matures 2052) proposed as settlement instrument to Dave Waldner. Settlement structure: Dave takes bond; Walt keeps $700K cash and full property sale waterfall. Dave's litigation ceiling $300K–$1.1M after Tebo offset and DJR waterfall. Need: confirm mediation outcome with Jeff Rose/Walt; CJ to provide BID senior bond retirement schedule for present-value analysis. ~$5M additional debt capacity in BID/Metro District may further subordinate the bond if issued as senior debt."
+    }
+    ]
+  },
+  {
+    "client": "Grant Brothers",
+    "tasks": [
+    {
+      "task": "Mineral Conveyance and Dissolution",
+      "assignee": "Cameron",
+      "status": "waiting_client",
+      "deadline": null,
+      "notes": "w/f Doug approval of dissolution plan."
+    },
+    {
+      "task": "Mineral Conveyance (finalize deeds)",
+      "assignee": "James",
+      "status": "in_progress",
+      "deadline": null,
+      "notes": "Finalize deeds. CG to check with Doug Grant."
+    }
+    ]
+  },
+  {
+    "client": "Grant, Aaron",
+    "tasks": [
+    {
+      "task": "6477 Frederick Way PSA - Calendar pending deadlines",
+      "assignee": "Cameron",
+      "status": "in_progress",
+      "deadline": null,
+      "notes": "PSA signed by Aaron. Review contract and calendar all contingency/deadline dates."
+    },
+    {
+      "task": "800 S Franklin Demand Letter",
+      "assignee": "Cameron",
+      "status": "in_progress",
+      "deadline": null,
+      "notes": "Lit scheduling mediation (ECP/JSR)."
+    },
+    {
+      "task": "Citywide Bank Litigation",
+      "assignee": "Cameron",
+      "status": "in_progress",
+      "deadline": null,
+      "notes": "Respond to Complaint."
+    },
+    {
+      "task": "Resolve unpaid bills",
+      "assignee": "Cameron",
+      "status": "in_progress",
+      "deadline": null,
+      "notes": ""
+    }
+    ]
+  },
+  {
+    "client": "Kent, Rich & Joe",
+    "isNew": true,
+    "tasks": [
+    {
+      "task": "ATRG option-lapse letters (Vasquez, Cook, I-76) and Arapahoe non-renewal notice",
+      "assignee": "Cameron",
+      "status": "in_progress",
+      "deadline": null,
+      "notes": "Four letters finalized and dated 7/7/26. ATRG's 6/29 extension letters did not validly exercise renewal options (wrong term requested - 3 yrs vs. 5-yr option, non-binding \"plan to\" language, deadline of ~6/30 passed). 7/23: Taft (ATRG's attorney) responded with three arguments: (1) June 29 letter was valid exercise; (2) no time-is-of-the-essence clause so ATRG had reasonable time; (3) 30-day cure period allowed ATRG to send corrected July 23 notices. Cameron's research memo (Trueman-Aspen 1986, Suss Pontiac 2008) knocks out arguments 2 and 3 under Colorado law. Core dispute: whether June 29 letter was effective (wrong 3-yr term vs. 5-yr option; non-binding \"plan to\" language; Kyle Swain authority). Client email sent 7/23 summarizing situation and next steps. FLAG (8/11 sync, inbox sweep): Stephanie Kent Krouse emailed Mon 8/10 9:04 PM, \"Re: ATRG Texts/Emails,\" addressed to Keith and Jeff, \"following up to see if you need anything els...\". Body not readable during this sync - review and confirm whether this changes the posture. Open item: confirm Cook/I-76 notice delivery; Honigman copy note in 7/9 letters may need correction (Section 20 applies to notices TO tenant, not FROM tenant)."
+    },
+    {
+      "task": "6751 Brighton Blvd - rezoning challenge status check",
+      "assignee": "Robyn",
+      "collaborators": ["James"],
+      "status": "in_progress",
+      "deadline": null,
+      "updated": "2026-08-11",
+      "notes": "Client wanted to challenge the rezoning on the 6751 Brighton Blvd property and met with one of the city planners around August 3. Nothing heard from the client since. 8/11 team call: Robyn to email the client for a status check - how the planner conversation went, and whether they need anything from us - framed as confirming there is nothing outstanding so the file can be updated. Planning commission is understood to meet at the end of August, and there is little the firm can do before then. Cameron is aware of the matter but is not working it; James has the substantive history. FLAG: exact planner meeting date (\"I think August 3rd\") and the end-of-August commission date both need confirming."
+    }
+    ]
+  },
+  {
+    "client": "Lofquist, Randy",
+    "tasks": [
+    {
+      "task": "Easement Evaluation at Sugar Mill Site",
+      "assignee": "James",
+      "status": "complete",
+      "deadline": null,
+      "updated": "2026-08-12",
+      "notes": ""
+    },
+    {
+      "task": "Weld County zoning/lighting complaint - Highway 119 property (COMP26-00118)",
+      "assignee": "Cameron",
+      "status": "complete",
+      "deadline": "2026-07-17",
+      "updated": "2026-08-12",
+      "notes": "Complaint-driven enforcement notice (not a citation) re: nighttime lighting glare near Blue Heron reservoir, cited under Weld County Code 23-2-160.U.6 (property is in unincorporated Weld County despite Longmont mailing address; site plan approval SPR-150 dates to 1991). County wants a site inspection and threatens possible termination of SPR-150 if unaddressed - response deadline 7/17/26 to preserve goodwill and take that threat off the table. Draft response letter to the county planner prepared (confirms representation, offers to schedule inspection, requests complaint file and SPR-150 records, reserves rights on the 1991 approval and termination threat). Open items: confirm whether lighting standards can apply retroactively to a 1991-approved use (possible legal nonconforming use), pull SPR-150 file and zoning history, get client photos of fixtures/aiming."
+    }
+    ]
+  },
+  {
+    "client": "McCarthy, Tim",
+    "tasks": [
+    {
+      "task": "Operating Agreement Amendments",
+      "assignee": "James",
+      "status": "complete",
+      "deadline": null,
+      "updated": "2026-08-12",
+      "notes": ""
+    },
+    {
+      "task": "Potential Admission of New Partner",
+      "assignee": "James",
+      "status": "complete",
+      "deadline": null,
+      "updated": "2026-08-12",
+      "notes": "Discussed with Tim. Sending draft this week."
+    }
+    ]
+  },
+  {
+    "client": "Moradi",
+    "tasks": [
+    {
+      "task": "Assemble cost estimates for building demolition",
+      "assignee": "Unassigned",
+      "status": "in_progress",
+      "deadline": null,
+      "notes": "Previously assigned to Laura (resigned). w/f estimates. CAG to get Pollard dealership demo contact."
+    },
+    {
+      "task": "Obtain Mineral Appraisal/Valuation",
+      "assignee": "James",
+      "status": "in_progress",
+      "deadline": null,
+      "notes": ""
+    },
+    {
+      "task": "White Rock ditch water share evaluation strategy",
+      "assignee": "Robyn",
+      "status": "in_progress",
+      "deadline": null,
+      "notes": "RLS draft email to CAG 4/9. Need approval to respond to client and approach Julie Pasillas."
+    },
+    {
+      "task": "Lexington builder outreach strategy (Civitas)",
+      "assignee": "Cameron",
+      "status": "in_progress",
+      "deadline": null,
+      "notes": "Builder targets: Sun Communities, Brookfield B2R, Boulder Creek, Bridgewater, Toll Brothers, Landmark, Oakwood, LGI, Richmond American, Century Communities. 81-acre site. Priority from 7/23 call: reach out to Chad Ellington at Peak (Cameron has prior relationship from MSP days; not yet responded to Sam/Alex outreach). Also follow up on Sumitomo-backed builder from earlier target list. Market soft — entitlement-focused developers (Peak, Chris Elliot) more likely buyers in current environment than production builders."
+    },
+    {
+      "task": "Contact Rich Coolidge (Civitas) re SUA and mineral rights",
+      "assignee": "Cameron",
+      "status": "in_progress",
+      "deadline": null,
+      "notes": "Via A.J. Krieger referral. Giving up mineral rights for easement release: non-starter."
+    },
+    {
+      "task": "Review SUA temporary drilling footprint language with James",
+      "assignee": "Cameron",
+      "status": "in_progress",
+      "deadline": null,
+      "notes": "Assess whether COGCC reforms make new well permits legally infeasible on site."
+    },
+    {
+      "task": "Follow up with Max on site design layout with easement in place",
+      "assignee": "Cameron",
+      "status": "in_progress",
+      "deadline": null,
+      "notes": "Alex asked Max to produce layout showing Staenberg parcel with easement."
+    },
+    {
+      "task": "Get Redland proposal scope for residential land infrastructure",
+      "assignee": "Cameron",
+      "status": "in_progress",
+      "deadline": null,
+      "notes": "Need picture of infrastructure requirements for residential land beyond the commercial piece."
+    },
+    {
+      "task": "Forward Robyn water write-up to Alex and Sam",
+      "assignee": "Cameron",
+      "status": "in_progress",
+      "deadline": null,
+      "notes": ""
+    },
+    {
+      "task": "Oxy Sable Glen: confirm election packet and lease status",
+      "assignee": "James",
+      "status": "in_progress",
+      "deadline": null,
+      "notes": "Notices may have gone to old address. Property held by Pan Trinity LLC. Issue: 12.5% vs. 20% royalty."
+    },
+    {
+      "task": "Crestone/SM Energy CDSUA release strategy - Cambria Crossing (Bresnahan communication)",
+      "assignee": "Cameron",
+      "status": "in_progress",
+      "deadline": null,
+      "notes": "Operative 2018 CDSUA (Crestone Peak Resources Holdings LLC / 610 South Main, LLC) now reviewed in full. Confirmed: COGCC drilling permits for Johnson 12H-C268 were never obtained (only Town/Firestone permits issued), so the Section 21(a) self-help termination clock never started - no free walk-away. Base term also survives because legacy wells still produce and the leasehold is held by production. Assuming the Firestone SUP has lapsed, two-track strategy finalized: (1) release of the unused Future Wells operations/temporary areas (worthless to operator without COGCC permits) at nominal cost, right-sized to the producing wells' actual footprint, backed by condemnation as a backstop (Town cleanest vehicle via C.R.S. Title 38; URA viable but needs a blight finding/adopted plan; developer-formed metro district weakest, highest pretext risk - condemning the producing wells themselves is legally fraught and not the target); (2) separate, paid negotiation to plug the producing legacy wells early, kept on its own track. Johnson pad confirmed on-site at Cambria; Bighorn/Kugel/Sheley are off-site. $250,000 Section 4 screening payment runs FROM Crestone/operator TO 610 South Main (contingent on permits + first production or site plan approval) - must not be released away. Draft letters finalized: to Bob Bresnahan (two-track proposal, doesn't disclose transaction specifics, requests successor-in-interest documentation) and to internal team Alex/Sam/Michael/Max (marked privileged/common-interest, full strategy memo). Open items before sending: confirm Town SUP lapse of record, confirm current holder (SM Energy vs. Civitas) in writing, confirm Michael's surname (Staenberg, not Steinberg). 7/23 call: SUA Proposal v2 with SK/AM comments integrated into final draft. Strategy finalized: send letter to Bresnahan first (without Sable Glen offer), then call with Sable Glen mineral sweetener — offer SM Energy/Civitas 18% royalty on Sable Glen, no $150K upfront (benchmark: Texas company at 22.5%/$150K bonus). Reimbursement floor ~$25K (pro-rata share of $100K FURA payment across 4 pads)."
+    }
+    ]
+  },
+  {
+    "client": "Nuttall, Brian",
+    "isNew": true,
+    "tasks": [
+    {
+      "task": "Shareholder Buyout - LOI review and Open Issues memo",
+      "assignee": "Cameron",
+      "status": "complete",
+      "deadline": null,
+      "updated": "2026-08-12",
+      "notes": "Memo updated to v2: full LOI breakdown added (financial terms, employment transition, binding vs. non-binding distinction) plus a dedicated Open Issues section walking through four flagged items and the protections Brian needs in the final documents."
+    }
+    ]
+  },
+  {
+    "client": "Postle",
+    "tasks": [
+    {
+      "task": "Davis Development Termination",
+      "assignee": "James",
+      "status": "in_progress",
+      "deadline": null,
+      "notes": "Open records request to Thornton. Check if submitted."
+    }
+    ]
+  },
+  {
+    "client": "Pounds, Walt",
+    "tasks": [
+    {
+      "task": "Riverset LLC Demand",
+      "assignee": "Kennedy",
+      "status": "waiting_counterparty",
+      "deadline": null,
+      "updated": "2026-08-11",
+      "notes": "8/11 team call: posture is now wait-and-see while the buy-side arranges financing. Statements were being sent to John; Kyle has been asking for them separately, so Kennedy is now copying Kyle on everything since it is unclear how coordinated Kyle and John are. Cameron's review indicates the firm has provided everything requested. Outcome both Cameron and Kennedy prefer is Walt being bought out rather than litigating. FLAG: surnames for Kyle and John not stated on the call - confirm. Prior demand confirmed sufficient; complaint remains the fallback if financing does not come together."
+    }
+    ]
+  },
+  {
+    "client": "Purvis",
+    "isNew": true,
+    "tasks": [
+    {
+      "task": "PP LLC strategy",
+      "assignee": "Cameron",
+      "status": "waiting_counterparty",
+      "deadline": null,
+      "updated": "2026-08-11",
+      "notes": "8/11 team call: still no response from the Purvis side; the ball is deliberately in their court and the firm is waiting rather than pushing. Target outcome discussed was a signed settlement by roughly November 1. FLAG: transcript refers to \"Ginger Purvis\" - confirm the correct name and whether that is the client contact or the opposing party. Mediation remains the recommended path. Keith Edwards as co-counsel. Strategy v8 prepared April 2026. Client meeting and presentation completed."
+    }
+    ]
+  },
+  {
+    "client": "Rademacher, Eric",
+    "tasks": [
+    {
+      "task": "LLC Buyout",
+      "assignee": "Kennedy",
+      "status": "complete",
+      "deadline": null,
+      "updated": "2026-08-11",
+      "notes": "CLOSED 8/11/26. Kennedy reported on the 8/11 team call that the conveyance documents are finally being signed and the matter wraps this week; Cameron confirmed it can come off the board. FLAG: mark fully closed once Kennedy confirms signatures are in hand - the call said \"finishing this week,\" not \"finished.\" Prior status: Eric wanted to sell membership interest, valuation needed."
+    }
+    ]
+  },
+  {
+    "client": "RRRS, LLP",
+    "tasks": [
+    {
+      "task": "Confirm execution of contract to buy and sell",
+      "assignee": "Kennedy",
+      "status": "complete",
+      "deadline": null,
+      "updated": "2026-08-12",
+      "notes": "Buyers and brokers non-responsive. Rick looking to list property."
+    }
+    ]
+  },
+  {
+    "client": "Sun / River Run",
+    "isNew": true,
+    "tasks": [
+    {
+      "task": "Punchlist resolution with Grand County (Granby)",
+      "assignee": "Cameron",
+      "status": "in_progress",
+      "deadline": null,
+      "notes": "Punchlist remaining items from 2023. E. Prosser email to Granby on file. Town of Granby meeting scheduled April 30 at 11:00 AM with full Granby team and Sun team."
+    }
+    ]
+  },
+  {
+    "client": "Sun / Smith Creek",
+    "isNew": true,
+    "tasks": [
+    {
+      "task": "Sewer acceptance / Pre-Inclusion Agreement disputes",
+      "assignee": "Cameron",
+      "status": "in_progress",
+      "deadline": null,
+      "notes": "Open issues memo v2 complete. Bonding dispute: $128K. ESCO corporate guarantee issue. Granby call prep package built: (1) Ditch Operations Plan responsibility section drafted, placing Selak-Larabee, Peterson No. 1, and Griffith ditches in the Town's column per WSA Section 5/5.5; (2) privileged rate-payer/overpayment strategy memo drafted - Sun's customer status under the WSA fee sections, and the 'Sun overpaid for the ditch' argument assessed as having real weaknesses (partly Sun's own development need, betterment and timing/voluntariness problems), recommended as leverage rather than a repayment demand; (3) Certificate of Substantial Completion form updated with the four-signature block the prior form lacked; (4) three ready-to-send items: Nathan follow-up teeing up the all-ditches position, Katie email pushing for a bond over a letter of credit, and an ESCO letter skeleton left deliberately unfinished pending Ed's contract language. Citations trace to Cameron's own prior review/transcript, not a fresh read of the executed agreements - water-rights ownership percentages and the ~$7M/$138K figures flagged as verify-before-use."
+    },
+    {
+      "task": "ESCO - outreach to Emerson on corporate guarantee",
+      "assignee": "Robyn",
+      "collaborators": ["Cameron"],
+      "status": "in_progress",
+      "deadline": null,
+      "updated": "2026-08-11",
+      "notes": "8/11 team call: Robyn has deliberately held off contacting Emerson because Katie flagged that ESCO's admin can be slow checking the PO box, so a non-response is not yet meaningful. Agreed to wait another day or two before reaching out. Cameron asked Robyn to give the update on the noon call tomorrow (8/12). FLAG: confirm the intended Emerson contact and whether this is the same thread as the ESCO corporate guarantee issue tracked under the sewer acceptance task."
+    }
+    ]
+  },
+  {
+    "client": "Sylvandale",
+    "isNew": true,
+    "tasks": [
+    {
+      "task": "Heart J Center - replacement nonprofit operator deal",
+      "assignee": "Cameron",
+      "status": "in_progress",
+      "deadline": null,
+      "updated": "2026-08-11",
+      "priority": "low",
+      "notes": "Cameron spoke with David Jessup on 8/10. The Heart J Center arrangement has fallen apart. A nonprofit that operates dude ranches now wants to put a deal together with them, which Cameron assessed as a strong fit. He told Jessup the firm can support part of it and referred him to two nonprofit attorneys, one being Kimberly Bar, who runs her own nonprofit firm. The nonprofit specialists will carry most of the work; Lyons Gaddis may be needed on title transfers and contract review. Nothing actionable yet - monitoring only. FLAG: mapped to Sylvandale based on the existing HEART J LEASE file; confirm this is the right client. FLAG: confirm spelling of \"Kimberly Bar\" (possibly Barr/Bahr)."
+    }
+    ]
+  },
+  {
+    "client": "Temple Grandin School",
+    "tasks": [
+    {
+      "task": "Real Estate Purchase",
+      "assignee": "James",
+      "status": "waiting_counterparty",
+      "deadline": null,
+      "updated": "2026-08-12",
+      "notes": "In due diligence. w/f Survey. Connect with Water Team."
+    }
+    ]
+  },
+  {
+    "client": "Tract",
+    "isNew": true,
+    "tasks": [
+    {
+      "task": "Pueblo Annexation and Zoning (Morley Property)",
+      "assignee": "Cameron",
+      "status": "in_progress",
+      "deadline": null,
+      "notes": "Engagement letter signed 4/9/26. Field guide v3 prepared. 12-pg Annexation Questions memo drafted 4/27 in response to Erin Fosdick inquiry. Confirmed as of early July: matter remains in the initial evaluation phase, no fixed delivery date at this time (prior 5/15/26 internal target has lapsed and was superseded - no deadline currently committed). Threshold verification: parcel-by-parcel distance pre/post Morley annexation still needed before advising whether City track is feasible vs. the two-step alternative. Cite-check current PMC Title XVII section numbering before client correspondence."
+    },
+    {
+      "task": "RJPC Ranch PSA - Section 25(b) annexation provision redraft",
+      "assignee": "Cameron",
+      "status": "in_progress",
+      "deadline": null,
+      "notes": "6/29 call with Ray/Eli team resolved the annexation-provision structure. Agreed changes: (1) remove the $150,000 Annexation Deposit entirely (with conforming edits to Sections 2(d), 3/escrow, 8(a), and 12(a) liquidated damages); (2) condition the Annexation Agreement and its financial obligations on rezone approval; (3) close-or-indemnify election - once annexation + rezone are finally approved and appeals expire, Buyer elects to either close within 30 days or indemnify Seller for Seller-burdening obligations above a to-be-set threshold (call used $150K, seller's draft used $100K - needs a decision); (4) no seller approval right over annexation applications, subject to a reasonableness carve-out; (5) serial-annexation mechanics (two petitions/same hearing, one consolidated Annexation Agreement) with a citation to the Colorado Municipal Annexation Act, C.R.S. § 31-12-101 et seq. (verify exact cite). Open item flagged on the call: team is not certain the Rambo Trail parcel is actually annexed into the City of Pueblo (GIS review suggested it may sit outside city boundaries) - this affects whether the serial-annexation/contiguity approach works and needs to be resolved before finalizing. Full PSA redline (25(b) rewrite plus conforming edits to 2(d), 3, 8(a), 12(a), and defined terms) drafted and ready for Cameron's review."
+    },
+    {
+      "task": "Updated utility service strategy - response to client",
+      "assignee": "Cameron",
+      "collaborators": ["Robyn"],
+      "status": "in_progress",
+      "deadline": "2026-08-12",
+      "updated": "2026-08-12",
+      "priority": "medium",
+      "notes": "FLAG (8/11 sync, inbox sweep): likely source material is in hand - Dan Becht emailed Mon 8/10 12:49 PM, \"Re: Pueblo water, sewer and tax questions, ahead of tomorrow's call,\" opening \"Thanks for the call last week. Below is a breakdown of the conversation along with some high-level...\". Read the full message before drafting; only the subject and preview line were legible during this sync. 8/11 team call: Cameron owes Tract a response. They sent updated information following the last call, and he committed to working it up into an updated strategy for dealing with utility service. Water content is expected to be the heavier part of the analysis. Plan agreed on the call: Cameron drafts, then Robyn reviews specifically to check the cross-references and citations are correct before it goes out."
+    }
+    ]
+  },
+  {
+    "client": "Tzap, Steve",
+    "tasks": [
+    {
+      "task": "Lafayette LUC adoption - second reading (rescheduled)",
+      "assignee": "Cameron",
+      "status": "in_progress",
+      "deadline": "2026-09-15",
+      "urgent": true,
+      "updated": "2026-08-12",
+      "notes": "Window to negotiate code modifications extremely narrow. Second reading originally targeted for June 2026; per Cameron's 7/9/26 structured Dashboard Update, date changed to mid-July 2026. 8/12 sync: second reading rescheduled again per structured Dashboard Update - deadline moved from Jul 15 to Sep 15 (exact hearing date still not specified in the update; confirm precise date with Lafayette)."
+    }
+    ]
+  },
+  {
+    "client": "Winger, Greg",
+    "tasks": [
+    {
+      "task": "Mineral Conveyance (Nebraska)",
+      "assignee": "James",
+      "status": "in_progress",
+      "deadline": null,
+      "notes": "Deeds drafted. Review and send to Greg."
+    }
+    ]
+  },
+  {
+    "client": "Ziggi's",
+    "isNew": true,
+    "tasks": [
+    {
+      "task": "Commerce City",
+      "assignee": "Robyn",
+      "status": "in_progress",
+      "deadline": null,
+      "updated": "2026-08-12",
+      "notes": "8/11 team call: Robyn reported the Ziggi's matters are in good shape across the board, with Cameron carrying the Commerce City piece. FLAG: no substantive detail was given on the call beyond \"you're working on the Commerce City\" - the specific scope and next step still need to be filled in. Mapped from the ZCF COMMERCE CITY file."
+    },
+    {
+      "task": "Belle Creek - revised demand letter",
+      "assignee": "Sean",
+      "collaborators": ["Robyn"],
+      "status": "in_progress",
+      "deadline": null,
+      "updated": "2026-08-11",
+      "notes": "8/11 team call: Robyn worked up a revised demand letter and Sean delivered it to the client. Robyn's read is that this one is being taken care of and needs no further attention right now. FLAG: the client name is garbled in the transcript audio (rendered as \"both creek\" and \"golf cream\") - mapped to Belle Creek on the strength of the existing Ziggi's BELLE CREEK file, but confirm before relying on it."
+    },
+    {
+      "task": "South Main - send lease copy to Jeff Deese",
+      "assignee": "Cameron",
+      "collaborators": ["Sean"],
+      "status": "complete",
+      "deadline": null,
+      "updated": "2026-08-12",
+      "notes": "FLAG (8/11 sync, inbox sweep): Jeff Deese emailed today 10:21 AM asking Cameron and Sean for a copy of the South Main Lease. Quick turnaround item. Mapped to Ziggi's on the strength of the SOUTH MAIN file; confirm that is the right matter and identify Deese's organisation. Body beyond the opening line was not readable during this sync."
+    }
+    ]
+  },
+  {
+    "client": "Unmapped - 8/11 Team Call",
+    "isNew": true,
+    "tasks": [
+    {
+      "task": "Call Ron Klein",
+      "assignee": "Cameron",
+      "status": "in_progress",
+      "deadline": "2026-08-12",
+      "updated": "2026-08-12",
+      "priority": "medium",
+      "notes": "FLAG: matter not identified on the call - needs to be filed under the right client. Cameron emailed Robyn about Ron Klein; she suggested a phone call instead, and Cameron committed to calling Ron on 8/11 (his afternoon was open) and reporting back. Context from the surrounding discussion suggests Ron is a counterparty in easement negotiations that have been dragging - Cameron and Robyn both described the finish line receding each time. Possibly connected to the Lofquist Sugar Mill easement or to Robyn's Johnstown easement, but neither link was stated."
+    },
+    {
+      "task": "Johnstown easement negotiation",
+      "assignee": "Robyn",
+      "status": "in_progress",
+      "deadline": null,
+      "updated": "2026-08-11",
+      "notes": "FLAG: client not identified on the call. Robyn is negotiating a separate easement involving Johnstown. The other side hoped to wrap it quickly; Robyn judged it less time-sensitive than that but wants to keep it moving, and would like the negotiations concluded. Same counterparty dynamic as the Ron Klein item above, and possibly the same negotiation."
+    },
+    {
+      "task": "Jim Birdsall meeting and document finalization",
+      "assignee": "Robyn",
+      "status": "in_progress",
+      "deadline": "2026-08-12",
+      "updated": "2026-08-11",
+      "notes": "FLAG: client not identified on the call, and the name is uncertain in the transcript audio (rendered \"gym birdsall\"). Meeting set for 8/12, expected to be a conversation rather than a working session, after which the team hopes to finalize documents for him. Deadline set to 8/12 to keep it visible; adjust once the matter is identified."
+    }
+    ]
+  }
 ];
 
-// ─── MODAL ────────────────────────────────────────────────────────
-function openModal(){ document.getElementById("modalOverlay").classList.add("open"); }
-function closeModal(){ document.getElementById("modalOverlay").classList.remove("open"); }
+// Snapshot of the dashboard as of the last sync. The morning sync rotates this
+// BEFORE applying new updates, which is what makes the "What Changed" panel work.
+const SNAPSHOT_DATE = "2026-08-13";
+const PREV = {
+ "Bestall, Jack||Monitor LLC matter": {
+  "a": "Cameron",
+  "s": "in_progress"
+ },
+ "Bestall, Jack||LLC financial information litigation": {
+  "a": "Cameron",
+  "s": "in_progress"
+ },
+ "Brookfield (BRP)||Schell Property / No. 3 Box Culvert Prescriptive Easement Analysis": {
+  "a": "Cameron",
+  "s": "in_progress"
+ },
+ "Brookfield (BRP)||LTWD Permit Issues Filing 7A": {
+  "a": "Cameron",
+  "s": "complete"
+ },
+ "Brookfield (BRP)||Review O&G relinquishments": {
+  "a": "Robyn",
+  "s": "complete"
+ },
+ "Brookfield (BRP)||Sarah Wagner Easement Acquisition": {
+  "a": "Cameron",
+  "s": "in_progress"
+ },
+ "Brookfield (BRP)||Draft correspondence to Little Thompson Water District re fee calculation issues": {
+  "a": "Cameron",
+  "s": "complete"
+ },
+ "Brookfield (BRP)||LTWD Filing 7E matter (formerly Barefoot Lakes)": {
+  "a": "Cameron",
+  "s": "complete"
+ },
+ "Brookfield (BRP)||Firestone mineral owner certification - Tract J (Filing 5)": {
+  "a": "Cameron",
+  "s": "complete"
+ },
+ "Clover Creek Investments||Review and Revise Annexation Agreement": {
+  "a": "Robyn",
+  "s": "in_progress"
+ },
+ "Clover Creek Investments||Wait for city response to proposal sent April 6th": {
+  "a": "Cameron",
+  "s": "in_progress"
+ },
+ "Clover Creek Investments||Negotiate water rights terms - reservoir share purchase": {
+  "a": "Robyn",
+  "s": "in_progress"
+ },
+ "Doug & Jody Robinson||LLC Formation and Contribution of Rental Property": {
+  "a": "Robyn",
+  "s": "complete"
+ },
+ "Elliott Family Farm||LOI Review and Negotiation": {
+  "a": "Cameron",
+  "s": "complete"
+ },
+ "Elliott Family Farm||Connect with seller's broker regarding water values": {
+  "a": "Cameron",
+  "s": "in_progress"
+ },
+ "Erie Commons Commercial||Draft proposal for cost reimbursement to Town of Erie": {
+  "a": "Cameron",
+  "s": "in_progress"
+ },
+ "Erie Commons Commercial||Respond to Ryan's emails and send status update to the group": {
+  "a": "Cameron",
+  "s": "in_progress"
+ },
+ "Erie Four Corners||Waldner Litigation (DJR / Pounds v. Waldner)": {
+  "a": "Cameron",
+  "s": "in_progress"
+ },
+ "Grant Brothers||Mineral Conveyance and Dissolution": {
+  "a": "Cameron",
+  "s": "waiting_client"
+ },
+ "Grant Brothers||Mineral Conveyance (finalize deeds)": {
+  "a": "James",
+  "s": "in_progress"
+ },
+ "Grant, Aaron||6477 Frederick Way PSA - Calendar pending deadlines": {
+  "a": "Cameron",
+  "s": "in_progress"
+ },
+ "Grant, Aaron||800 S Franklin Demand Letter": {
+  "a": "Cameron",
+  "s": "in_progress"
+ },
+ "Grant, Aaron||Citywide Bank Litigation": {
+  "a": "Cameron",
+  "s": "in_progress"
+ },
+ "Grant, Aaron||Resolve unpaid bills": {
+  "a": "Cameron",
+  "s": "in_progress"
+ },
+ "Kent, Rich & Joe||ATRG option-lapse letters (Vasquez, Cook, I-76) and Arapahoe non-renewal notice": {
+  "a": "Cameron",
+  "s": "in_progress"
+ },
+ "Kent, Rich & Joe||6751 Brighton Blvd - rezoning challenge status check": {
+  "a": "Robyn",
+  "s": "in_progress"
+ },
+ "Lofquist, Randy||Easement Evaluation at Sugar Mill Site": {
+  "a": "James",
+  "s": "complete"
+ },
+ "Lofquist, Randy||Weld County zoning/lighting complaint - Highway 119 property (COMP26-00118)": {
+  "a": "Cameron",
+  "s": "complete",
+  "d": "2026-07-17"
+ },
+ "McCarthy, Tim||Operating Agreement Amendments": {
+  "a": "James",
+  "s": "complete"
+ },
+ "McCarthy, Tim||Potential Admission of New Partner": {
+  "a": "James",
+  "s": "complete"
+ },
+ "Moradi||Assemble cost estimates for building demolition": {
+  "a": "Unassigned",
+  "s": "in_progress"
+ },
+ "Moradi||Obtain Mineral Appraisal/Valuation": {
+  "a": "James",
+  "s": "in_progress"
+ },
+ "Moradi||White Rock ditch water share evaluation strategy": {
+  "a": "Robyn",
+  "s": "in_progress"
+ },
+ "Moradi||Lexington builder outreach strategy (Civitas)": {
+  "a": "Cameron",
+  "s": "in_progress"
+ },
+ "Moradi||Contact Rich Coolidge (Civitas) re SUA and mineral rights": {
+  "a": "Cameron",
+  "s": "in_progress"
+ },
+ "Moradi||Review SUA temporary drilling footprint language with James": {
+  "a": "Cameron",
+  "s": "in_progress"
+ },
+ "Moradi||Follow up with Max on site design layout with easement in place": {
+  "a": "Cameron",
+  "s": "in_progress"
+ },
+ "Moradi||Get Redland proposal scope for residential land infrastructure": {
+  "a": "Cameron",
+  "s": "in_progress"
+ },
+ "Moradi||Forward Robyn water write-up to Alex and Sam": {
+  "a": "Cameron",
+  "s": "in_progress"
+ },
+ "Moradi||Oxy Sable Glen: confirm election packet and lease status": {
+  "a": "James",
+  "s": "in_progress"
+ },
+ "Moradi||Crestone/SM Energy CDSUA release strategy - Cambria Crossing (Bresnahan communication)": {
+  "a": "Cameron",
+  "s": "in_progress"
+ },
+ "Nuttall, Brian||Shareholder Buyout - LOI review and Open Issues memo": {
+  "a": "Cameron",
+  "s": "complete"
+ },
+ "Postle||Davis Development Termination": {
+  "a": "James",
+  "s": "in_progress"
+ },
+ "Pounds, Walt||Riverset LLC Demand": {
+  "a": "Kennedy",
+  "s": "waiting_counterparty"
+ },
+ "Purvis||PP LLC strategy": {
+  "a": "Cameron",
+  "s": "waiting_counterparty"
+ },
+ "Rademacher, Eric||LLC Buyout": {
+  "a": "Kennedy",
+  "s": "complete"
+ },
+ "RRRS, LLP||Confirm execution of contract to buy and sell": {
+  "a": "Kennedy",
+  "s": "complete"
+ },
+ "Sun / River Run||Punchlist resolution with Grand County (Granby)": {
+  "a": "Cameron",
+  "s": "in_progress"
+ },
+ "Sun / Smith Creek||Sewer acceptance / Pre-Inclusion Agreement disputes": {
+  "a": "Cameron",
+  "s": "in_progress"
+ },
+ "Sun / Smith Creek||ESCO - outreach to Emerson on corporate guarantee": {
+  "a": "Robyn",
+  "s": "in_progress"
+ },
+ "Sylvandale||Heart J Center - replacement nonprofit operator deal": {
+  "a": "Cameron",
+  "s": "in_progress"
+ },
+ "Temple Grandin School||Real Estate Purchase": {
+  "a": "James",
+  "s": "waiting_counterparty"
+ },
+ "Tract||Pueblo Annexation and Zoning (Morley Property)": {
+  "a": "Cameron",
+  "s": "in_progress"
+ },
+ "Tract||RJPC Ranch PSA - Section 25(b) annexation provision redraft": {
+  "a": "Cameron",
+  "s": "in_progress"
+ },
+ "Tract||Updated utility service strategy - response to client": {
+  "a": "Cameron",
+  "s": "in_progress",
+  "d": "2026-08-12"
+ },
+ "Tzap, Steve||Lafayette LUC adoption - second reading (rescheduled)": {
+  "a": "Cameron",
+  "s": "in_progress",
+  "d": "2026-09-15"
+ },
+ "Winger, Greg||Mineral Conveyance (Nebraska)": {
+  "a": "James",
+  "s": "in_progress"
+ },
+ "Ziggi's||Commerce City": {
+  "a": "Robyn",
+  "s": "in_progress"
+ },
+ "Ziggi's||Belle Creek - revised demand letter": {
+  "a": "Sean",
+  "s": "in_progress"
+ },
+ "Ziggi's||South Main - send lease copy to Jeff Deese": {
+  "a": "Cameron",
+  "s": "complete"
+ },
+ "Unmapped - 8/11 Team Call||Call Ron Klein": {
+  "a": "Cameron",
+  "s": "in_progress",
+  "d": "2026-08-12"
+ },
+ "Unmapped - 8/11 Team Call||Johnstown easement negotiation": {
+  "a": "Robyn",
+  "s": "in_progress"
+ },
+ "Unmapped - 8/11 Team Call||Jim Birdsall meeting and document finalization": {
+  "a": "Robyn",
+  "s": "in_progress",
+  "d": "2026-08-12"
+ }
+};
+
+// ─── MODALS ───────────────────────────────────────────────────────
+const MAILTO = "cgrant@lyonsgaddis.com";
+
+function showFormView(){
+  document.getElementById("formView").style.display="";
+  document.getElementById("sendResult").classList.remove("on");
+  document.getElementById("modalTitle").textContent="Submit a Dashboard Update";
+  document.getElementById("modalSub").textContent="Your update will be emailed to Cameron and applied to the dashboard automatically during the next morning sync. Use exact client names where possible.";
+}
+function openModal(){ showFormView(); document.getElementById("modalOverlay").classList.add("open"); }
+function closeModal(){ document.getElementById("modalOverlay").classList.remove("open"); showFormView(); }
 function closeModalIfBg(e){ if(e.target===document.getElementById("modalOverlay"))closeModal(); }
 
+// Builds the message, shows it as selectable text, wires a real <a href="mailto:">
+// anchor, and attempts a clipboard copy. The old approach set window.location to a
+// mailto: URL from script, which is silently blocked inside sandboxed iframes and
+// does nothing when no mail handler is registered — the button appeared dead.
+function showResult(subject, body, title, sub){
+  const full="To: "+MAILTO+"\nSubject: "+subject+"\n\n"+body;
+  const url="mailto:"+MAILTO+"?subject="+encodeURIComponent(subject)+"&body="+encodeURIComponent(body);
+  document.getElementById("resultText").value=full;
+  document.getElementById("mailLink").setAttribute("href",url);
+  document.getElementById("subjLine").textContent='"'+subject+'"';
+  document.getElementById("copyMsg").textContent="";
+  document.getElementById("formView").style.display="none";
+  document.getElementById("sendResult").classList.add("on");
+  if(title) document.getElementById("modalTitle").textContent=title;
+  if(sub) document.getElementById("modalSub").textContent=sub;
+  document.getElementById("modalOverlay").classList.add("open");
+  try{
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(full).then(function(){
+        document.getElementById("copyMsg").innerHTML='<span class="copy-ok">Copied to clipboard. </span>';
+      },function(){});
+    }
+  }catch(e){}
+}
+function copyResult(){
+  const ta=document.getElementById("resultText"),msg=document.getElementById("copyMsg");
+  ta.removeAttribute("readonly"); ta.focus(); ta.select();
+  try{ ta.setSelectionRange(0,999999); }catch(e){}
+  let ok=false;
+  try{ ok=document.execCommand("copy"); }catch(e){}
+  ta.setAttribute("readonly","readonly");
+  if(ok){ msg.innerHTML='<span class="copy-ok">Copied. </span>'; return; }
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(ta.value).then(
+      function(){ msg.innerHTML='<span class="copy-ok">Copied. </span>'; },
+      function(){ msg.innerHTML='<span class="copy-ok">Text is selected above &mdash; press Ctrl+C. </span>'; }
+    );
+  } else { msg.innerHTML='<span class="copy-ok">Text is selected above &mdash; press Ctrl+C. </span>'; }
+}
 function sendUpdate(){
   const client=document.getElementById("m-client").value.trim();
   const task=document.getElementById("m-task").value.trim();
   const type=document.getElementById("m-type").value;
   const details=document.getElementById("m-details").value.trim();
   if(!client||!details){ alert("Please fill in the Client/Matter and Details fields."); return; }
-  const subject=encodeURIComponent("DASHBOARD UPDATE: "+client);
-  const body=encodeURIComponent(
-    "CLIENT: "+client+"\n"+
+  const subject="DASHBOARD UPDATE: "+client;
+  const body="CLIENT: "+client+"\n"+
     (task?"TASK: "+task+"\n":"")+
     "UPDATE: "+type+"\n"+
     "DETAILS: "+details+"\n\n"+
-    "---\nSent from the Lyons Gaddis Client Status Dashboard"
-  );
-  window.location.href="mailto:cgrant@lyonsgaddis.com?subject="+subject+"&body="+body;
-  setTimeout(closeModal, 500);
+    "---\nSent from the Lyons Gaddis Client Status Dashboard";
+  showResult(subject, body);
 }
 
-// ─── DASHBOARD ────────────────────────────────────────────────────
-let curFilter="All", curSearch="", allOpen=false;
-function esc(s){if(!s)return"";return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+// ─── DATE / SCORING ENGINE ───────────────────────────────────────
 function today(){const d=new Date();return new Date(d.getFullYear(),d.getMonth(),d.getDate());}
 function parseDate(s){if(!s)return null;const[y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d);}
+function daysUntil(dl){if(!dl)return null;return Math.round((parseDate(dl)-today())/86400000);}
+function daysSince(ds){if(!ds)return null;return Math.round((today()-parseDate(ds))/86400000);}
 function isOverdue(dl){return dl&&parseDate(dl)<today();}
-function isSoon(dl){if(!dl)return false;const d=parseDate(dl),t=today();return d>=t&&(d-t)<=7*86400000;}
+function isSoon(dl){const d=daysUntil(dl);return d!==null&&d>=0&&d<=7;}
 function fmtDate(dl){if(!dl)return null;const d=parseDate(dl);return d.toLocaleDateString("en-US",{month:"short",day:"numeric"});}
-function isUrgent(t){return t.urgent===true||isOverdue(t.deadline)||isSoon(t.deadline);}
-function urgWhy(t){if(isOverdue(t.deadline))return{cls:"urg-why-od",label:"Overdue"};if(isSoon(t.deadline))return{cls:"urg-why-soon",label:"Due Soon"};return{cls:"urg-why-flag",label:"Priority"};}
-function getFiltered(){return DATA.map(c=>({...c,tasks:c.tasks.filter(t=>(curFilter==="All"||t.assignee===curFilter)&&(curSearch===""||c.client.toLowerCase().includes(curSearch.toLowerCase())||t.task.toLowerCase().includes(curSearch.toLowerCase())||(t.notes&&t.notes.toLowerCase().includes(curSearch.toLowerCase()))))})).filter(c=>c.tasks.length>0);}
 
+const STAKES_RE = /closing|litigation|hearing|mediation|trial|complaint|notice of violation|statut|foreclos|condemnation|second reading/i;
+
+function scoreTask(t){
+  let s = 0; const why = [];
+  if (isDone(t.status)) { return { score: 0, tier: "later", why: ["Complete"], done: true }; }
+  const du = daysUntil(t.deadline);
+  if (du !== null && du < 0) { s += 40 + Math.min(10, Math.abs(du) * 2); why.push("Overdue " + Math.abs(du) + "d"); }
+  else if (du !== null && du <= 3) { s += 35; why.push("Due ≤3d"); }
+  else if (du !== null && du <= 7) { s += 25; why.push("Due ≤7d"); }
+  else if (du !== null && du <= 14) { s += 15; why.push("Due ≤14d"); }
+  if (t.urgent === true) { s += 25; why.push("Flagged"); }
+  if (t.priority === "high") { s = Math.max(s + 20, 70); why.push("High priority"); }
+  else if (t.priority === "medium") { s += 10; }
+  else if (t.priority === "low") { s = Math.min(s, 25); why.push("Deprioritized"); }
+  const ds = daysSince(t.updated);
+  if (t.priority !== "low") {
+    if (ds !== null && ds >= 21) { s += 15; why.push("Stale " + ds + "d"); }
+    else if (ds !== null && ds >= 14) { s += 10; why.push("Stale " + ds + "d"); }
+  }
+  if (STAKES_RE.test(t.task + " " + (t.notes || ""))) { s += 8; }
+  if (t.status === "in_progress") { s += 5; }
+  s = Math.min(100, s);
+  const tier = s >= 60 ? "now" : s >= 35 ? "next" : "later";
+  return { score: s, tier: tier, why: why };
+}
+// Ranking runs on the EDITED view of a task so the board reflects what you see.
+function rank(t,client){ if(!t._r) t._r = scoreTask(client?effTask(client,t):t); return t._r; }
+function clearRanks(){ DATA.forEach(c=>c.tasks.forEach(t=>{ delete t._r; })); }
+
+// ─── INLINE EDITS (Status / Assigned / Deadline / Notes) ──────────
+// Edits live in a per-browser override layer on top of DATA. DATA is the master and
+// is rewritten by the weekday morning sync, so overrides are held separately and
+// surfaced in the pending bar until they are emailed in and written to the master.
+const PEOPLE = ATTORNEYS.filter(a=>a!=="All");
+const OV_KEY = "lgDashOverrides_v2";
+let OVERRIDES = {};
+try { OVERRIDES = JSON.parse(localStorage.getItem(OV_KEY)||"{}") || {}; } catch(e){ OVERRIDES = {}; }
+let showDone=false;
+try { showDone = localStorage.getItem("lgDashShowDone")==="1"; } catch(e){}
+
+function keyOf(client,task){ return client+"␟"+task; }
+function saveOv(){ try{ localStorage.setItem(OV_KEY,JSON.stringify(OVERRIDES)); }catch(e){} }
+function stamp(){ const d=new Date(); return "["+(d.getMonth()+1)+"/"+d.getDate()+"] "; }
+
+function eff(client,t){
+  const o=OVERRIDES[keyOf(client,t.task)]||{};
+  const adds=o.notesAdd||[];
+  return {
+    status:   (o.status&&S[o.status])?o.status:t.status,
+    assignee: o.assignee||t.assignee,
+    deadline: Object.prototype.hasOwnProperty.call(o,"deadline")?o.deadline:(t.deadline||null),
+    notes:    adds.length ? adds.join("  ")+(t.notes?"  "+t.notes:"") : (t.notes||""),
+    addedNotes: adds
+  };
+}
+// A ranking view of the task with edits applied, so priority reflects what you see.
+function effTask(client,t){ const e=eff(client,t); return Object.assign({},t,{status:e.status,assignee:e.assignee,deadline:e.deadline,notes:e.notes}); }
+function findTask(client,task){
+  const cl=DATA.find(c=>c.client===client); if(!cl) return null;
+  return cl.tasks.find(t=>t.task===task)||null;
+}
+function ovFor(k){ return OVERRIDES[k]||(OVERRIDES[k]={}); }
+function pruneOv(k){
+  const o=OVERRIDES[k]; if(!o) return;
+  if(!o.status&&!o.assignee&&!Object.prototype.hasOwnProperty.call(o,"deadline")&&!(o.notesAdd&&o.notesAdd.length)) delete OVERRIDES[k];
+}
+function setField(client,task,field,value){
+  const orig=findTask(client,task); if(!orig) return;
+  const k=keyOf(client,task), o=ovFor(k);
+  if(field==="deadline"){
+    const base=orig.deadline||null, v=value||null;
+    if(v===base) delete o.deadline; else o.deadline=v;
+  } else {
+    if(value===orig[field]) delete o[field]; else o[field]=value;
+  }
+  o.ts=new Date().toISOString();
+  pruneOv(k); saveOv(); clearRanks(); renderProjects();
+}
+function addNote(client,task,text){
+  text=(text||"").trim(); if(!text) return;
+  const k=keyOf(client,task), o=ovFor(k);
+  o.notesAdd=o.notesAdd||[];
+  o.notesAdd.unshift(stamp()+text);
+  o.ts=new Date().toISOString();
+  saveOv(); clearRanks(); renderProjects();
+}
+function undoNote(client,task){
+  const k=keyOf(client,task), o=OVERRIDES[k]; if(!o||!o.notesAdd||!o.notesAdd.length) return;
+  o.notesAdd.shift(); if(!o.notesAdd.length) delete o.notesAdd;
+  pruneOv(k); saveOv(); clearRanks(); renderProjects();
+}
+
+// ─── Pending change tracking ─────────────────────────────────────
+function pendingList(){
+  const out=[];
+  DATA.forEach(cl=>cl.tasks.forEach(t=>{
+    const o=OVERRIDES[keyOf(cl.client,t.task)]; if(!o) return;
+    const parts=[];
+    if(o.status&&o.status!==t.status&&S[o.status]) parts.push("Status: "+S[t.status].label+" -> "+S[o.status].label);
+    if(o.assignee&&o.assignee!==t.assignee) parts.push("Assigned: "+t.assignee+" -> "+o.assignee);
+    if(Object.prototype.hasOwnProperty.call(o,"deadline")&&(o.deadline||null)!==(t.deadline||null))
+      parts.push("Deadline: "+(t.deadline?fmtDate(t.deadline):"none")+" -> "+(o.deadline?fmtDate(o.deadline):"none"));
+    (o.notesAdd||[]).slice().reverse().forEach(function(n){ parts.push("Note added: "+n); });
+    if(parts.length) out.push({client:cl.client,task:t.task,parts:parts});
+  }));
+  return out;
+}
+function pendingCount(){ return pendingList().reduce(function(s,x){return s+x.parts.length;},0); }
+function emailPending(){
+  const p=pendingList(); if(!p.length) return;
+  const n=pendingCount();
+  const subject="DASHBOARD UPDATE: Dashboard edits ("+n+")";
+  let body="UPDATE: Status Change / Reassignment / New Deadline / Notes Update\n"+
+    "The following changes were made directly on the dashboard and need to be applied to the master file.\n\n";
+  p.forEach(function(x,i){ body+=(i+1)+". CLIENT: "+x.client+"\n   TASK: "+x.task+"\n   "+x.parts.join("\n   ")+"\n\n"; });
+  body+="---\nSent from the Lyons Gaddis Client Status Dashboard";
+  showResult(subject, body, "Email Your Changes",
+    "These "+n+" change"+(n!==1?"s":"")+" are saved in your browser only. Send them to Cameron so they get written into the master file.");
+}
+function clearPending(){
+  if(!confirm("Discard all unsaved dashboard edits and revert to the master file?")) return;
+  OVERRIDES={}; saveOv(); clearRanks(); renderProjects();
+}
+function renderPendingBar(){
+  const el=document.getElementById("pendingBar"), p=pendingList();
+  if(!p.length){ el.innerHTML=""; return; }
+  const n=pendingCount();
+  const list=p.map(function(x){
+    return '<div><b>'+esc(x.client)+'</b> &mdash; '+esc(x.task)+'<br>&nbsp;&nbsp;&nbsp;'+x.parts.map(esc).join('<br>&nbsp;&nbsp;&nbsp;')+'</div>';
+  }).join("");
+  el.innerHTML='<div class="pending-bar"><h3>&#9998; '+n+' unsaved change'+(n!==1?"s":"")+'</h3>'+
+    '<span class="pending-sub">Saved in this browser only. Email them to Cameron to get them into the master file.</span>'+
+    '<button class="pb-btn primary" onclick="emailPending()">Email These Changes</button>'+
+    '<button class="pb-btn" onclick="clearPending()">Discard</button>'+
+    '<div class="pb-list">'+list+'</div></div>';
+}
+
+// ─── Editable cell renderers ─────────────────────────────────────
+function selStatus(client,t,cur){
+  const opts=Object.keys(S).map(function(k){return '<option value="'+k+'"'+(k===cur?" selected":"")+'>'+S[k].label+'</option>';}).join("");
+  return '<select class="edit-sel sel-status '+S[cur].cls+(cur!==t.status?" edited":"")+'" data-client="'+esc(client)+'" data-task="'+esc(t.task)+'" data-field="status" title="Click to change status">'+opts+'</select>';
+}
+function selWho(client,t,cur){
+  const opts=PEOPLE.map(function(p){return '<option value="'+esc(p)+'"'+(p===cur?" selected":"")+'>'+(p==="Unassigned"?"⚠ Unassigned":esc(p))+'</option>';}).join("");
+  return '<select class="edit-sel sel-who '+(cur==="Unassigned"?"unassigned":"")+(cur!==t.assignee?" edited":"")+'" data-client="'+esc(client)+'" data-task="'+esc(t.task)+'" data-field="assignee" title="Click to reassign">'+opts+'</select>';
+}
+function inpDeadline(client,t,cur){
+  const cls=isOverdue(cur)?"dl-od":isSoon(cur)?"dl-soon":"dl-ok";
+  const changed=(cur||null)!==(t.deadline||null)?" edited":"";
+  return '<input type="date" class="edit-dl '+cls+changed+'" value="'+esc(cur||"")+'" data-client="'+esc(client)+'" data-task="'+esc(t.task)+'" data-field="deadline" title="Click to set or change the deadline">'+
+    (cur?'<span class="dl-clear" data-clear-client="'+esc(client)+'" data-clear-task="'+esc(t.task)+'" title="Clear deadline">&#10005;</span>':'');
+}
+function notesCell(client,t,e){
+  const k=keyOf(client,t.task);
+  const open=NOTE_OPEN===k;
+  let html="";
+  if(open){
+    html+='<textarea class="note-add" id="noteBox" placeholder="Type an additional note. It will be dated and added ahead of the existing notes." data-client="'+esc(client)+'" data-task="'+esc(t.task)+'"></textarea>'+
+      '<div class="note-btns"><button class="note-btn" data-note-save="'+esc(client)+'" data-note-task="'+esc(t.task)+'">Add Note</button>'+
+      '<button class="note-btn sec" data-note-cancel="1">Cancel</button></div>';
+  }
+  const adds=e.addedNotes||[];
+  const addedHtml=adds.map(function(n){return '<span class="note-new">'+esc(n)+'</span>';}).join("  ");
+  const baseHtml=t.notes?esc(t.notes):(adds.length?"":'<span class="note-hint">click to add a note</span>');
+  if(adds.length){
+    html+=addedHtml+(t.notes?"  "+baseHtml:"")+
+      ' <span class="dl-clear" data-undo-client="'+esc(client)+'" data-undo-task="'+esc(t.task)+'" title="Remove the most recent added note">&#10005;</span>';
+  } else {
+    html+=baseHtml;
+  }
+  return html;
+}
+let NOTE_OPEN=null;
+
+// ─── Delegated edit handlers ─────────────────────────────────────
+document.addEventListener("change",function(e){
+  const el=e.target;
+  if(!el||!el.getAttribute) return;
+  if(el.classList.contains("edit-sel")||el.classList.contains("edit-dl")){
+    setField(el.getAttribute("data-client"), el.getAttribute("data-task"), el.getAttribute("data-field"), el.value);
+  }
+});
+document.addEventListener("click",function(e){
+  const el=e.target; if(!el||!el.getAttribute) return;
+  if(el.getAttribute("data-clear-client")){
+    setField(el.getAttribute("data-clear-client"), el.getAttribute("data-clear-task"), "deadline", ""); return;
+  }
+  if(el.getAttribute("data-undo-client")){
+    undoNote(el.getAttribute("data-undo-client"), el.getAttribute("data-undo-task")); return;
+  }
+  if(el.getAttribute("data-note-save")){
+    const box=document.getElementById("noteBox");
+    addNote(el.getAttribute("data-note-save"), el.getAttribute("data-note-task"), box?box.value:"");
+    NOTE_OPEN=null; renderProjects(); return;
+  }
+  if(el.getAttribute("data-note-cancel")){ NOTE_OPEN=null; renderProjects(); return; }
+  const cell=el.closest?el.closest(".notes-cell"):null;
+  if(cell&&!el.closest(".note-btns")&&el.tagName!=="TEXTAREA"){
+    const k=keyOf(cell.getAttribute("data-client"),cell.getAttribute("data-task"));
+    NOTE_OPEN = (NOTE_OPEN===k) ? null : k;
+    renderProjects();
+    const b=document.getElementById("noteBox"); if(b) b.focus();
+  }
+});
+function toggleDone(){
+  showDone=!showDone;
+  try{ localStorage.setItem("lgDashShowDone",showDone?"1":"0"); }catch(e){}
+  document.getElementById("donebtn").textContent=showDone?"Hide Completed":"Show Completed";
+  renderProjects();
+}
+
+// ─── FILTERING ────────────────────────────────────────────────────
+let curFilter="All", curTier="All", curSearch="", allOpen=false, sortMode="priority";
+function esc(s){if(!s)return"";return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+function matchesAssignee(t,f,client){return f==="All"||eff(client,t).assignee===f||(t.collaborators&&t.collaborators.includes(f));}
+function whoLabel(t){return t.collaborators&&t.collaborators.length?t.assignee+" + "+t.collaborators.join(", "):t.assignee;}
+function matchesTier(t,client){return curTier==="All"||rank(t,client).tier===curTier;}
+function matchesSearch(t,c){if(curSearch==="")return true;const q=curSearch.toLowerCase();const n=eff(c.client,t).notes;return c.client.toLowerCase().includes(q)||t.task.toLowerCase().includes(q)||(n&&n.toLowerCase().includes(q));}
+function isTaskDone(client,t){ return isDone(eff(client,t).status); }
+function getFiltered(){
+  return DATA.map(c=>{
+    let tasks=c.tasks.filter(t=>(showDone||!isTaskDone(c.client,t))&&matchesAssignee(t,curFilter,c.client)&&matchesTier(t,c.client)&&matchesSearch(t,c));
+    const hasSubgroups=tasks.some(t=>t.subgroup);
+    if(sortMode==="priority"&&!hasSubgroups){ tasks=[...tasks].sort((a,b)=>rank(b,c.client).score-rank(a,c.client).score); }
+    return {...c,tasks:tasks};
+  }).filter(c=>c.tasks.length>0);
+}
+
+// ─── PRIORITIES PANEL ────────────────────────────────────────────
 function renderUrgentPanel(){
   const items=[];
-  DATA.forEach(cl=>{cl.tasks.forEach(t=>{if(isUrgent(t))items.push({client:cl.client,t});});});
+  DATA.forEach(cl=>{cl.tasks.forEach(t=>{if(isTaskDone(cl.client,t))return;const r=rank(t,cl.client);if(r.tier==="now")items.push({client:cl.client,t,r});});});
+  items.sort((a,b)=>b.r.score-a.r.score);
   const el=document.getElementById("urgentPanel");
   if(!items.length){el.innerHTML="";return;}
-  const rows=items.map(({client,t})=>{
-    const why=urgWhy(t),dlTxt=t.deadline?(isOverdue(t.deadline)?"&#9888; ":"")+fmtDate(t.deadline):"&mdash;",dlCls=isOverdue(t.deadline)?"dl-od":isSoon(t.deadline)?"dl-soon":"dl-ok",whoCls=t.assignee==="Unassigned"?"unassigned":"normal",whoTxt=t.assignee==="Unassigned"?"&#9888; Unassigned":esc(t.assignee);
-    return`<tr><td><span class="urgent-client">${esc(client)}</span></td><td class="urgent-task">${esc(t.task)}</td><td class="td-who ${whoCls}" style="white-space:nowrap">${whoTxt}</td><td><span class="badge ${S[t.status].cls}">${S[t.status].label}</span></td><td class="td-dl ${dlCls}">${dlTxt}</td><td><span class="urg-why ${why.cls}">${why.label}</span></td></tr>`;
+  const rows=items.map(({client,t,r})=>{
+    const e=eff(client,t);
+    const dlCls=isOverdue(e.deadline)?"dl-od":isSoon(e.deadline)?"dl-soon":"dl-ok";
+    const whyChips=r.why.map(w=>`<span class="why-chip">${esc(w)}</span>`).join("");
+    return`<tr><td><span class="urgent-client">${esc(client)}</span></td><td class="urgent-task">${esc(t.task)}</td><td style="white-space:nowrap">${selWho(client,t,e.assignee)}</td><td>${selStatus(client,t,e.status)}</td><td class="td-dl ${dlCls}">${inpDeadline(client,t,e.deadline)}</td><td>${whyChips}</td></tr>`;
   }).join("");
-  el.innerHTML=`<div class="urgent-panel"><div class="urgent-panel-hdr"><span style="font-size:15px">&#9889;</span><h2>This Week</h2><span class="up-sub">Needs immediate attention</span><span class="urgent-count">${items.length} item${items.length!==1?"s":""}</span></div><table class="urgent-table"><thead><tr><th>Client</th><th>Task</th><th>Assigned</th><th>Status</th><th>Deadline</th><th>Why</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  el.innerHTML=`<div class="urgent-panel"><div class="urgent-panel-hdr"><span style="font-size:15px">&#9889;</span><h2>Act Now</h2><span class="up-sub">Ranked by urgency score</span><span class="urgent-count">${items.length} item${items.length!==1?"s":""}</span></div><table class="urgent-table"><thead><tr><th>Client</th><th>Task</th><th>Assigned</th><th>Status</th><th>Deadline</th><th>Why</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 
+// ─── MY PRIORITIES STRIP (attorney filter active) ────────────────
+function renderMypStrip(){
+  const el=document.getElementById("mypStrip");
+  if(curFilter==="All"){el.innerHTML="";return;}
+  const items=[];
+  DATA.forEach(cl=>{cl.tasks.forEach(t=>{if(isTaskDone(cl.client,t))return;if(matchesAssignee(t,curFilter,cl.client)){const r=rank(t,cl.client);items.push({client:cl.client,t,r});}});});
+  items.sort((a,b)=>b.r.score-a.r.score);
+  const top=items.slice(0,5).filter(i=>i.r.tier!=="later"||i.r.score>0);
+  if(!top.length){el.innerHTML="";return;}
+  const lis=top.map(({client,t,r})=>`<li><span class="myp-client">${esc(client)}:</span> ${esc(t.task)} <span class="myp-why">${r.why.length?"("+r.why.join(", ")+")":""}</span></li>`).join("");
+  el.innerHTML=`<div class="myp"><h2>&#127919; ${esc(curFilter)}'s Top Priorities</h2><ol>${lis}</ol></div>`;
+}
+
+// ─── CHANGE DETECTION (vs. last sync snapshot) ───────────────────
+function tkey(client,task){ return client+"||"+task; }
+function pLabel(p){ return p?p:"normal"; }
+function computeChanges(){
+  const added=[],changed=[],closed=[],newlyOverdue=[];
+  const seen={};
+  DATA.forEach(cl=>cl.tasks.forEach(t=>{
+    const k=tkey(cl.client,t.task); seen[k]=true;
+    const e=eff(cl.client,t);           // compare the EDITED view, so live edits show up here too
+    const p=PREV[k];
+    if(!p){ added.push({client:cl.client,t:t}); }
+    else {
+      const dl=[];
+      if(p.s!==e.status) dl.push("status "+S[p.s].label+" -> "+S[e.status].label);
+      if(pLabel(p.p)!==pLabel(t.priority)) dl.push("priority "+pLabel(p.p)+" -> "+pLabel(t.priority));
+      if((p.d||"")!==(e.deadline||"")) dl.push("deadline "+(p.d?fmtDate(p.d):"none")+" -> "+(e.deadline?fmtDate(e.deadline):"none"));
+      if(p.a!==e.assignee) dl.push("owner "+p.a+" -> "+e.assignee);
+      const pc=(p.c||[]).join(", "), nc=(t.collaborators||[]).join(", ");
+      if(pc!==nc) dl.push("also working: "+(pc||"none")+" -> "+(nc||"none"));
+      if(e.addedNotes&&e.addedNotes.length) dl.push(e.addedNotes.length+" note"+(e.addedNotes.length!==1?"s":"")+" added");
+      if(dl.length) changed.push({client:cl.client,t:t,deltas:dl});
+    }
+    // became overdue since the snapshot was taken
+    if(!isDone(e.status)&&isOverdue(e.deadline)&&SNAPSHOT_DATE&&parseDate(e.deadline)>=parseDate(SNAPSHOT_DATE)) newlyOverdue.push({client:cl.client,t:t});
+  }));
+  Object.keys(PREV).forEach(k=>{ if(!seen[k]){ const parts=k.split("||"); closed.push({client:parts[0],task:parts[1],prev:PREV[k]}); } });
+  const total=added.length+changed.length+closed.length+newlyOverdue.length;
+  return {added:added,changed:changed,closed:closed,newlyOverdue:newlyOverdue,total:total};
+}
+function whoFor(t){ return [t.assignee].concat(t.collaborators||[]).join(" / "); }
+
+function renderChangePanel(){
+  const el=document.getElementById("changePanel");
+  const ch=computeChanges();
+  if(!ch.total){ el.innerHTML=""; return; }
+  const row=(cls,tag,client,body,who)=>`<tr><td><span class="chg-tag ${cls}">${tag}</span></td><td class="chg-client">${esc(client)}</td><td class="chg-body">${body}</td><td class="chg-who">${esc(who||"")}</td></tr>`;
+  let rows="";
+  ch.newlyOverdue.forEach(i=>{ rows+=row("chg-od","Now overdue",i.client,esc(i.t.task)+' <span class="chg-delta">deadline was '+fmtDate(i.t.deadline)+'</span>',whoFor(i.t)); });
+  ch.added.forEach(i=>{ rows+=row("chg-new","New",i.client,esc(i.t.task),whoFor(i.t)); });
+  ch.changed.forEach(i=>{ rows+=row("chg-upd","Updated",i.client,esc(i.t.task)+' <span class="chg-delta">'+esc(i.deltas.join("; "))+'</span>',whoFor(i.t)); });
+  ch.closed.forEach(i=>{ rows+=row("chg-done","Closed",i.client,esc(i.task),i.prev?i.prev.a:""); });
+  el.innerHTML=`<div class="chg-panel"><div class="chg-hdr"><span style="font-size:15px">&#128260;</span><h2>What Changed</h2><span class="chg-sub">since the ${esc(fmtLong(SNAPSHOT_DATE))} sync</span><span class="chg-count">${ch.total} item${ch.total!==1?"s":""}</span></div><table class="chg-table"><tbody>${rows}</tbody></table></div>`;
+}
+function fmtLong(s){ if(!s)return"last"; const d=parseDate(s); return d.toLocaleDateString("en-US",{month:"long",day:"numeric"}); }
+
+// ─── DAILY TEAM UPDATE ───────────────────────────────────────────
+function digestNames(){ return ATTORNEYS.filter(a=>a!=="All"); }
+
+function buildDaily(){
+  const d=new Date();
+  const dateStr=d.toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"});
+  let out="LYONS GADDIS - REAL ESTATE PRACTICE GROUP\n";
+  out+="DAILY MATTER UPDATE - "+dateStr+"\n";
+  out+="=========================================================\n";
+
+  const ch=computeChanges();
+  out+="\nWHAT CHANGED since the "+fmtLong(SNAPSHOT_DATE)+" sync\n";
+  if(!ch.total){ out+="  No changes recorded.\n"; }
+  else {
+    ch.newlyOverdue.forEach(i=>{ out+="  [NOW OVERDUE] "+i.client+" - "+i.t.task+" (was due "+fmtDate(i.t.deadline)+") - "+whoFor(i.t)+"\n"; });
+    ch.added.forEach(i=>{ out+="  [NEW] "+i.client+" - "+i.t.task+" - "+whoFor(i.t)+"\n"; });
+    ch.changed.forEach(i=>{ out+="  [UPDATED] "+i.client+" - "+i.t.task+": "+i.deltas.join("; ")+" - "+whoFor(i.t)+"\n"; });
+    ch.closed.forEach(i=>{ out+="  [CLOSED] "+i.client+" - "+i.task+"\n"; });
+  }
+
+  const doneItems=[];
+  DATA.forEach(cl=>cl.tasks.forEach(t=>{ if(isTaskDone(cl.client,t)) doneItems.push({client:cl.client,t:t}); }));
+  if(doneItems.length){
+    out+="\nCOMPLETED ("+doneItems.length+")\n";
+    doneItems.forEach(i=>{ out+="  "+i.client+" - "+i.t.task+" | "+whoFor(i.t)+"\n"; });
+  }
+
+  const nowItems=[];
+  DATA.forEach(cl=>cl.tasks.forEach(t=>{ if(isTaskDone(cl.client,t))return; const r=rank(t,cl.client); if(r.tier==="now") nowItems.push({client:cl.client,t:t,r:r,e:eff(cl.client,t)}); }));
+  nowItems.sort((a,b)=>b.r.score-a.r.score);
+  out+="\nACT NOW - FIRM WIDE ("+nowItems.length+")\n";
+  if(!nowItems.length) out+="  Nothing in the Now tier.\n";
+  nowItems.forEach(i=>{
+    const dl=i.e.deadline?" | due "+fmtDate(i.e.deadline)+(isOverdue(i.e.deadline)?" (OVERDUE)":""):"";
+    out+="  "+i.client+" - "+i.t.task+dl+" | "+i.e.assignee+"\n";
+  });
+
+  out+="\nBY ATTORNEY\n";
+  digestNames().forEach(name=>{
+    const items=[];
+    DATA.forEach(cl=>cl.tasks.forEach(t=>{ if(isTaskDone(cl.client,t))return; if(matchesAssignee(t,name,cl.client)){ const r=rank(t,cl.client); if(r.tier!=="later") items.push({client:cl.client,t:t,r:r,e:eff(cl.client,t)}); } }));
+    if(!items.length){ if(name!=="Unassigned") out+="\n=== "+name.toUpperCase()+" ===\n  Nothing in the Now or Next tiers.\n"; return; }
+    items.sort((a,b)=>b.r.score-a.r.score);
+    out+="\n=== "+name.toUpperCase()+(name==="Unassigned"?" (NEEDS AN OWNER)":"")+" ===\n";
+    items.forEach(i=>{
+      const marker=i.r.tier==="now"?"[NOW]  ":"[NEXT] ";
+      const dl=i.e.deadline?" | due "+fmtDate(i.e.deadline)+(isOverdue(i.e.deadline)?" (OVERDUE)":""):"";
+      const why=i.r.why.length?" | "+i.r.why.join(", "):"";
+      out+=marker+i.client+" - "+i.t.task+dl+why+"\n";
+    });
+  });
+
+  out+="\n---\nAuto-generated from the Client Status Dashboard (last data update: "+LAST_UPDATED+").\n";
+  out+="Ranking = deadline proximity + manual flags + staleness + priority overrides.\n";
+  out+="To correct anything, use the Submit an Update button on the dashboard, or reply to Cameron.\n";
+  return out;
+}
+
+function teamRecipients(){ return digestNames().map(n=>TEAM[n]).filter(Boolean); }
+
+function openDigest(){
+  const text=buildDaily();
+  document.getElementById("digestText").value=text;
+  const ch=computeChanges();
+  const subject=encodeURIComponent("Real Estate Group - Daily Matter Update - "+new Date().toLocaleDateString("en-US",{month:"short",day:"numeric"})+(ch.total?" ("+ch.total+" change"+(ch.total!==1?"s":"")+")":""));
+  let body=text; if(body.length>1800) body=body.substring(0,1750)+"\n...(truncated for email; open the dashboard for the full list)";
+  const to=teamRecipients().join(",");
+  document.getElementById("digestMailto").href="mailto:"+encodeURIComponent(to)+"?subject="+subject+"&body="+encodeURIComponent(body);
+  const missing=digestNames().filter(n=>n!=="Unassigned"&&!TEAM[n]);
+  document.getElementById("digestTo").innerHTML = missing.length
+    ? "Sending to: "+esc(to)+". <strong>No address on file for: "+esc(missing.join(", "))+".</strong>"
+    : "Sending to: "+esc(to);
+  document.getElementById("digestOverlay").classList.add("open");
+}
+function closeDigest(){ document.getElementById("digestOverlay").classList.remove("open"); }
+function closeDigestIfBg(e){ if(e.target===document.getElementById("digestOverlay"))closeDigest(); }
+function copyDigest(btn){
+  const ta=document.getElementById("digestText");
+  ta.select(); ta.setSelectionRange(0, 999999);
+  const done=()=>{ btn.textContent="Copied ✓"; setTimeout(()=>{btn.textContent="Copy to Clipboard";},1600); };
+  if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(ta.value).then(done).catch(()=>{ document.execCommand("copy"); done(); }); }
+  else { document.execCommand("copy"); done(); }
+}
+
+// ─── STATS / FILTER BARS ─────────────────────────────────────────
 function renderStats(f){
-  const total=f.reduce((n,c)=>n+c.tasks.length,0),waiting=f.reduce((n,c)=>n+c.tasks.filter(t=>t.status!=="in_progress").length,0),overdue=f.reduce((n,c)=>n+c.tasks.filter(t=>isOverdue(t.deadline)).length,0),unassigned=f.reduce((n,c)=>n+c.tasks.filter(t=>t.assignee==="Unassigned").length,0),urgent=DATA.reduce((n,c)=>n+c.tasks.filter(t=>isUrgent(t)).length,0);
-  document.getElementById("sub").textContent="Last updated: "+LAST_UPDATED+" \u2022 Cameron A. Grant \u2022 Lyons Gaddis, P.C.";
-  document.getElementById("statsBar").innerHTML=`<div class="stat"><span class="stat-val">${f.length}</span><span class="stat-lbl">Active Clients</span></div><div class="stat"><span class="stat-val">${total}</span><span class="stat-lbl">Open Tasks</span></div>${urgent>0?`<div class="stat"><span class="stat-val stat-urgent">${urgent}</span><span class="stat-lbl">This Week</span></div>`:""}${overdue>0?`<div class="stat"><span class="stat-val stat-danger">${overdue}</span><span class="stat-lbl">Overdue</span></div>`:""}<div class="stat"><span class="stat-val stat-warn">${waiting}</span><span class="stat-lbl">Waiting</span></div>${unassigned>0?`<div class="stat"><span class="stat-val stat-unassigned">${unassigned}</span><span class="stat-lbl">Unassigned</span></div>`:""}`;
+  const live=f.map(c=>({client:c.client,tasks:c.tasks.filter(t=>!isTaskDone(c.client,t))}));
+  const total=live.reduce((n,c)=>n+c.tasks.length,0),
+        waiting=live.reduce((n,c)=>n+c.tasks.filter(t=>{const s=eff(c.client,t).status;return s!=="in_progress"&&!isDone(s);}).length,0),
+        overdue=live.reduce((n,c)=>n+c.tasks.filter(t=>isOverdue(eff(c.client,t).deadline)).length,0),
+        unassigned=live.reduce((n,c)=>n+c.tasks.filter(t=>eff(c.client,t).assignee==="Unassigned").length,0);
+  let nowCt=0,nextCt=0,doneCt=0;
+  DATA.forEach(c=>c.tasks.forEach(t=>{
+    if(isTaskDone(c.client,t)){doneCt++;return;}
+    const tr=rank(t,c.client).tier; if(tr==="now")nowCt++; else if(tr==="next")nextCt++;
+  }));
+  document.getElementById("sub").textContent="Last updated: "+LAST_UPDATED+" • Cameron A. Grant • Lyons Gaddis, P.C.";
+  document.getElementById("statsBar").innerHTML=`<div class="stat"><span class="stat-val">${f.length}</span><span class="stat-lbl">Active Clients</span></div><div class="stat"><span class="stat-val">${total}</span><span class="stat-lbl">Open Tasks</span></div>${nowCt>0?`<div class="stat"><span class="stat-val stat-now">${nowCt}</span><span class="stat-lbl">Now</span></div>`:""}${nextCt>0?`<div class="stat"><span class="stat-val stat-next">${nextCt}</span><span class="stat-lbl">Next</span></div>`:""}${overdue>0?`<div class="stat"><span class="stat-val stat-danger">${overdue}</span><span class="stat-lbl">Overdue</span></div>`:""}<div class="stat"><span class="stat-val stat-warn">${waiting}</span><span class="stat-lbl">Waiting</span></div>${unassigned>0?`<div class="stat"><span class="stat-val stat-unassigned">${unassigned}</span><span class="stat-lbl">Unassigned</span></div>`:""}${doneCt>0?`<div class="stat"><span class="stat-val stat-done">${doneCt}</span><span class="stat-lbl">Completed</span></div>`:""}`;
 }
 
-function renderFilters(){document.getElementById("filters").innerHTML=ATTORNEYS.map(a=>`<button class="fbtn ${a==="Unassigned"?"unassigned-btn":""} ${a===curFilter?"on":""}" onclick="setFilter('${a}')">${a}</button>`).join("");}
+function renderFilters(){
+  document.getElementById("filters").innerHTML=ATTORNEYS.map(a=>`<button class="fbtn ${a==="Unassigned"?"unassigned-btn":""} ${a===curFilter?"on":""}" onclick="setFilter('${a}')">${a}</button>`).join("");
+  document.getElementById("tierFilters").innerHTML=TIERS.map(t=>`<button class="fbtn tbtn ${t.key===curTier?(t.key==="All"?"on":"on-"+t.key):""}" onclick="setTier('${t.key}')">${t.label}</button>`).join("");
+}
 
+// ─── PROJECT CARDS ───────────────────────────────────────────────
 function renderProjects(){
-  const f=getFiltered();renderStats(f);renderUrgentPanel();const c=document.getElementById("proj");
+  const f=getFiltered();renderStats(f);renderPendingBar();renderChangePanel();renderUrgentPanel();renderMypStrip();const c=document.getElementById("proj");
   if(!f.length){c.innerHTML='<div class="empty">No matters match your current filter.</div>';return;}
-  c.innerHTML=f.map((cl,idx)=>{
-    const hasOD=cl.tasks.some(t=>isOverdue(t.deadline)),hasUA=cl.tasks.some(t=>t.assignee==="Unassigned"),hasUrg=cl.tasks.some(t=>isUrgent(t)),assignees=[...new Set(cl.tasks.map(t=>t.assignee))].join(", ");
+  const list=sortMode==="priority"
+    ? [...f].sort((a,b)=>Math.max(...b.tasks.map(t=>rank(t,b.client).score))-Math.max(...a.tasks.map(t=>rank(t,a.client).score)))
+    : f;
+  c.innerHTML=list.map((cl,idx)=>{
+    const effs=cl.tasks.map(t=>eff(cl.client,t));
+    const liveIdx=cl.tasks.map((t,i)=>i).filter(i=>!isDone(effs[i].status));
+    const hasOD=liveIdx.some(i=>isOverdue(effs[i].deadline)),
+          hasUA=liveIdx.some(i=>effs[i].assignee==="Unassigned"),
+          hasNow=liveIdx.some(i=>rank(cl.tasks[i],cl.client).tier==="now"),
+          // count completed from the MASTER client record, not the filtered copy,
+          // since getFiltered has already dropped completed tasks when they're hidden
+          nDone=(function(){const m=DATA.find(x=>x.client===cl.client);return m?m.tasks.filter(t=>isTaskDone(cl.client,t)).length:0;})(),
+          assignees=[...new Set(cl.tasks.flatMap((t,i)=>[effs[i].assignee,...(t.collaborators||[])]))].join(", ");
+    const isOpen=openClients.has(cl.client);
     let lastSub=null;
-    const rows=cl.tasks.map(t=>{
-      const dlCls=isOverdue(t.deadline)?"dl-od":isSoon(t.deadline)?"dl-soon":"dl-ok",dlTxt=t.deadline?(isOverdue(t.deadline)?"&#9888; ":"")+fmtDate(t.deadline):"\u2014",whoCls=t.assignee==="Unassigned"?"unassigned":"normal",urgDot=isUrgent(t)?'<span class="urg-inline"></span>':"";
+    const rows=cl.tasks.map((t,i)=>{
+      const e=effs[i], r=rank(t,cl.client), done=isDone(e.status);
+      const dlCls=isOverdue(e.deadline)?"dl-od":isSoon(e.deadline)?"dl-soon":"dl-ok";
+      const tierChip=done?'<span class="tier tier-later">done</span>':`<span class="tier tier-${r.tier}">${r.tier}</span>`;
       let sgHdr="";
       if(t.subgroup&&t.subgroup!==lastSub){sgHdr=`<tr class="subgroup-row"><td colspan="5" class="subgroup-hdr">${esc(t.subgroup)}</td></tr>`;lastSub=t.subgroup;}
-      return sgHdr+`<tr><td class="td-task">${urgDot}${esc(t.task)}</td><td class="td-who ${whoCls}">${t.assignee==="Unassigned"?"&#9888; Unassigned":esc(t.assignee)}</td><td><span class="badge ${S[t.status].cls}">${S[t.status].label}</span></td><td class="td-dl ${dlCls}">${dlTxt}</td><td class="td-notes">${t.notes?esc(t.notes):"\u2014"}</td></tr>`;
+      return sgHdr+`<tr class="${done?"row-complete":""}"><td class="td-task">${tierChip}${esc(t.task)}</td><td>${selWho(cl.client,t,e.assignee)}</td><td>${selStatus(cl.client,t,e.status)}</td><td class="td-dl ${dlCls}">${inpDeadline(cl.client,t,e.deadline)}</td><td class="td-notes notes-cell" data-client="${esc(cl.client)}" data-task="${esc(t.task)}">${notesCell(cl.client,t,e)}</td></tr>`;
     }).join("");
-    return`<div class="card ${hasUA?"has-unassigned":""} ${hasUrg&&!hasUA?"has-urgent":""}"><div class="card-hdr" onclick="toggle(${idx})"><div class="hdr-left"><span class="cname">${esc(cl.client)}</span><span class="tc-badge">${cl.tasks.length} task${cl.tasks.length!==1?"s":""}</span>${hasOD?'<span class="od-badge">Overdue</span>':""}${hasUA?'<span class="ua-badge">Unassigned</span>':""}${hasUrg&&!hasOD?'<span class="urg-badge">This Week</span>':""}${cl.isNew?'<span class="new-badge">New</span>':""}</div><div class="hdr-right"><span class="assignee-list">${esc(assignees)}</span><span class="chev" id="ch${idx}">&#9660;</span></div></div><div class="task-body" id="tb${idx}"><table><thead><tr><th>Task</th><th>Assigned</th><th>Status</th><th>Deadline</th><th>Notes</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+    return`<div class="card ${hasUA?"has-unassigned":""} ${hasNow&&!hasUA?"has-now":""}"><div class="card-hdr" data-idx="${idx}" data-client="${esc(cl.client)}"><div class="hdr-left"><span class="cname">${esc(cl.client)}</span><span class="tc-badge">${liveIdx.length} task${liveIdx.length!==1?"s":""}</span>${hasOD?'<span class="od-badge">Overdue</span>':""}${hasUA?'<span class="ua-badge">Unassigned</span>':""}${hasNow&&!hasOD?'<span class="urg-badge">Act Now</span>':""}${nDone>0?`<span class="done-badge">${nDone} complete</span>`:""}${cl.isNew?'<span class="new-badge">New</span>':""}</div><div class="hdr-right"><span class="assignee-list">${esc(assignees)}</span><span class="chev ${isOpen?"open":""}" id="ch${idx}">&#9660;</span></div></div><div class="task-body ${isOpen?"open":""}" id="tb${idx}"><table><thead><tr><th>Task</th><th>Assigned</th><th>Status</th><th>Deadline</th><th>Notes</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
   }).join("");
 }
 
-function toggle(idx){const tb=document.getElementById("tb"+idx),ch=document.getElementById("ch"+idx);if(!tb)return;const o=tb.classList.contains("open")
+// Card expand/collapse. Delegated so it survives re-renders, and tracked by client
+// name so an inline edit does not silently collapse the card being worked on.
+let openClients=new Set();
+document.getElementById("proj").addEventListener("click",function(e){
+  const hdr=e.target.closest?e.target.closest(".card-hdr"):null; if(!hdr) return;
+  const idx=hdr.getAttribute("data-idx"),client=hdr.getAttribute("data-client");
+  const tb=document.getElementById("tb"+idx),ch=document.getElementById("ch"+idx); if(!tb) return;
+  const open=!tb.classList.contains("open");
+  tb.classList.toggle("open",open); ch.classList.toggle("open",open);
+  if(open) openClients.add(client); else openClients.delete(client);
+});
+function toggleAll(){
+  allOpen=!allOpen;
+  document.getElementById("xpbtn").textContent=allOpen?"Collapse All":"Expand All";
+  openClients = allOpen ? new Set(DATA.map(c=>c.client)) : new Set();
+  document.querySelectorAll(".task-body").forEach(el=>el.classList.toggle("open",allOpen));
+  document.querySelectorAll(".chev").forEach(el=>el.classList.toggle("open",allOpen));
+}
+function setFilter(f){curFilter=f;renderFilters();renderProjects();}
+function setTier(t){curTier=t;renderFilters();renderProjects();}
+function toggleSort(){sortMode=sortMode==="priority"?"az":"priority";document.getElementById("sortbtn").textContent=sortMode==="priority"?"Sort: Priority":"Sort: A–Z";renderProjects();}
+document.getElementById("srch").addEventListener("input",e=>{curSearch=e.target.value;renderProjects();});
+document.getElementById("donebtn").textContent=showDone?"Hide Completed":"Show Completed";
+renderFilters();
+renderProjects();
+</script>
+</body>
+</html>
